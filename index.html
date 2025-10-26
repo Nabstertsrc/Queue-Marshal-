@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Queue-Marshal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      function initMap() {
+        window.googleMapsApiLoaded = true;
+        window.dispatchEvent(new CustomEvent('google-maps-api-loaded'));
+      }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDua4dwdQK2ImECypD3fWoYsn9nkfrpRGk&libraries=places&callback=initMap" defer onerror="console.error('Google Maps script failed to load. Check API key, network, and console for details.')"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: '#1877F2',
+                '50': '#E8F1FE',
+                '100': '#D1E3FD',
+                '200': '#A9C8FB',
+                '300': '#81ACFA',
+                '400': '#5991F8',
+                '500': '#3175F6',
+                '600': '#1877F2',
+                '700': '#125BC9',
+                '800': '#0D42A0',
+                '900': '#082877',
+                '950': '#04144E'
+              },
+              secondary: '#F0F2F5',
+              accent: '#42B72A',
+            },
+          },
+        },
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.4"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "name": "Queue-Marshal",
+  "description": "A platform connecting Requesters with Marshals who can complete tasks like standing in queues for a fee. Features map-based task discovery, user roles, and integrated payments.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
