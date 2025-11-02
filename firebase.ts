@@ -29,44 +29,91 @@ service cloud.firestore {
   match /databases/{database}/documents {
   
     // USERS COLLECTION
-    // Users can create their own profile, and only they can read or update it.
     match /users/{userId} {
-      allow read, update: if request.auth.uid == userId;
+      // Allow authenticated users to read profiles (needed for names, ratings, etc.).
+      allow read: if request.auth != null;
+      
+      // Users can create their own profile.
       allow create: if request.auth.uid == userId;
+      
+      // A user can update their own data.
+      // For cross-user transactions (payment/rating), allow ONLY specific fields to be updated.
+      // NOTE: In a production app, this sensitive logic should be handled by secure Cloud Functions.
+      allow update: if request.auth.uid == userId ||
+        (request.auth.uid != userId && (
+            // Allow updating ONLY balance for payments
+            (request.writeFields.size() == 1 && 'balance' in request.writeFields) ||
+            // Allow updating ONLY rating fields together
+            (request.writeFields.size() == 2 && 'averageRating' in request.writeFields && 'ratingCount' in request.writeFields)
+          )
+        );
     }
     
     // TASKS COLLECTION
-    // Tasks can be read by any logged-in user.
-    // They can only be created, updated, or deleted by authorized users.
     match /tasks/{taskId} {
+      // Helper function to check if the current user is the requester of the task.
+      function isRequester() {
+        return request.auth.uid == resource.data.requesterId;
+      }
+      
+      // Helper function to check if the current user is the assigned marshal of the task.
+      function isMarshal() {
+        return request.auth.uid == resource.data.marshalId;
+      }
+      
+      // Helper function to check if a marshal is validly accepting an open task.
+      function isAcceptingTask() {
+        // 1. Check user permissions: The user must have the 'marshal' role.
+        let userIsMarshal = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'marshal';
+
+        // 2. Check current state: The task must be 'Open' and have no marshal assigned yet.
+        let taskIsAvailable = resource.data.status == 'Open' && 
+                              (!('marshalId' in resource.data) || resource.data.marshalId == null);
+        
+        // 3. Check incoming state: The marshal must be assigning it to themselves and updating the status.
+        let updateIsCorrect = request.resource.data.marshalId == request.auth.uid &&
+                              request.resource.data.status == 'In Progress';
+                              
+        // 4. Check that only the allowed fields are being modified in this operation.
+        // This is a key security check. The client should only update these two fields.
+        let onlyAllowedFieldsModified = request.writeFields.size() == 2 && 
+                                        'status' in request.writeFields && 
+                                        'marshalId' in request.writeFields;
+                                        
+        return userIsMarshal && taskIsAvailable && updateIsCorrect && onlyAllowedFieldsModified;
+      }
+
+      // Any authenticated user can read tasks.
       allow read: if request.auth != null;
       
       // A task can only be created if the requesterId matches the logged-in user.
       allow create: if request.auth.uid == request.resource.data.requesterId;
       
-      // A task can be updated by its requester or its assigned marshal.
-      allow update: if request.auth.uid == resource.data.requesterId || request.auth.uid == resource.data.marshalId;
+      // A task can be updated if the user is the requester, the assigned marshal,
+      // or if they are a marshal accepting an open task.
+      allow update: if isRequester() || isMarshal() || isAcceptingTask();
       
       // A task can only be deleted by the original requester.
-      allow delete: if request.auth.uid == resource.data.requesterId;
+      allow delete: if isRequester();
     }
 
     // CHATS COLLECTION
-    // Chat messages can only be read or created by the two users involved in the task.
-    // This rule securely checks the task document to verify participants.
     match /chats/{taskId}/messages/{messageId} {
+      // Helper function to verify if the current user is part of the task's conversation.
       function isParticipant(taskId) {
         let task = get(/databases/$(database)/documents/tasks/$(taskId)).data;
         return request.auth.uid == task.requesterId || request.auth.uid == task.marshalId;
       }
+      
+      // Chat messages can only be read or created by the two users involved in the task.
       allow read, create: if isParticipant(taskId);
     }
 
     // RATINGS COLLECTION
-    // Ratings can be read by anyone logged in.
-    // They can only be created by the user who is submitting the rating.
     match /ratings/{ratingId} {
+      // Ratings can be read by anyone logged in.
       allow read: if request.auth != null;
+      // Ratings can only be created by the user who is submitting the rating.
       allow create: if request.auth.uid == request.resource.data.ratedByUserId;
     }
   }

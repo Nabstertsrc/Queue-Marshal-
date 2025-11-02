@@ -105,6 +105,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error("Could not update profile.");
     }
   }, [user]);
+
+  const updateUserLocation = useCallback(async (location: { lat: number; lng: number }) => {
+    if (!user) return;
+    try {
+      const userRef = db.collection('users').doc(user.id);
+      await userRef.update({ location });
+      // We don't update the local user state here to avoid re-renders on every location change.
+      // The component that needs the live location will listen to Firestore directly.
+    } catch (error) {
+        console.error("Error updating user location: ", error);
+        // Fail silently as this is a background task
+    }
+  }, [user]);
   
   const value = {
     isAuthenticated: !!user,
@@ -114,6 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     register,
     logout,
     updateUser,
+    updateUserLocation,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

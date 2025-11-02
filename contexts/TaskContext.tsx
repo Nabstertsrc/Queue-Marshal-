@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import type { Task, TaskContextType, User } from '../types';
 import { TaskStatus, PaymentMethod } from '../types';
 import { useAuth } from './AuthContext';
@@ -30,41 +30,85 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user]);
 
   const addTask = useCallback(async (taskData: Omit<Task, 'id' | 'createdAt' | 'status' | 'requesterId' | 'paymentMethod'>, paymentMethod: PaymentMethod): Promise<Task> => {
-    if (!user) throw new Error("User not authenticated");
+    if (!user || !auth.currentUser) throw new Error("User not authenticated");
 
-    const newTaskPayload = {
-      ...taskData,
-      requesterId: user.id,
-      createdAt: Date.now(),
-      status: TaskStatus.OPEN,
-      paymentMethod: paymentMethod,
-    };
+    try {
+      // Get the Firebase ID token for the current user.
+      const token = await auth.currentUser.getIdToken();
 
-    const docRef = await db.collection('tasks').add(newTaskPayload);
-    
-    return { ...newTaskPayload, id: docRef.id };
+      // Send the request to the backend server.
+      const response = await fetch('http://localhost:3001/api/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // Send the token for authentication
+        },
+        body: JSON.stringify({ taskData, paymentMethod }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create task on the server.');
+      }
+
+      const createdTask = await response.json();
+      return createdTask as Task;
+    } catch (error) {
+      console.error("Error adding task via backend:", error);
+      // Re-throw the error to be caught by the calling component (e.g., RequestModal)
+      throw error;
+    }
   }, [user]);
 
   const acceptTask = useCallback(async (taskId: string): Promise<void> => {
-    if (!user) throw new Error("User not authenticated");
+    if (!user || !auth.currentUser) throw new Error("User not authenticated");
     
-    const taskRef = db.collection('tasks').doc(taskId);
-    await taskRef.update({
-        status: TaskStatus.IN_PROGRESS,
-        marshalId: user.id
-    });
+    try {
+        const token = await auth.currentUser.getIdToken();
+        const response = await fetch(`http://localhost:3001/api/tasks/${taskId}/accept`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to accept task.');
+        }
+        // UI will update automatically via the onSnapshot listener.
+    } catch (error) {
+        console.error("Error accepting task via backend:", error);
+        throw error;
+    }
   }, [user]);
 
   const completeTask = useCallback(async (taskId: string): Promise<void> => {
-     if (!user) throw new Error("User not authenticated");
+    if (!user || !auth.currentUser) throw new Error("User not authenticated");
 
-     const taskRef = db.collection('tasks').doc(taskId);
-     await taskRef.update({
-         status: TaskStatus.COMPLETED
-     });
+    try {
+        const token = await auth.currentUser.getIdToken();
+        const response = await fetch(`http://localhost:3001/api/tasks/${taskId}/complete`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to complete task.');
+        }
+        // UI will update automatically via the onSnapshot listener.
+    } catch (error) {
+        console.error("Error completing task via backend:", error);
+        throw error;
+    }
   }, [user]);
   
   const deleteTask = useCallback(async (taskId: string) => {
+    // This can remain a client-side action if secured by Firestore rules,
+    // or be moved to the backend for consistency. For now, we leave it.
     await db.collection('tasks').doc(taskId).delete();
   }, []);
   

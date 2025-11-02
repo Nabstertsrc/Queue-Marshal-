@@ -2,6 +2,7 @@ import React from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { TaskProvider } from './contexts/TaskContext';
+import { LocationTrackingProvider } from './contexts/LocationTrackingContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
@@ -14,9 +15,11 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <TaskProvider>
-        <HashRouter>
-          <Main />
-        </HashRouter>
+        <LocationTrackingProvider>
+          <HashRouter>
+            <Main />
+          </HashRouter>
+        </LocationTrackingProvider>
       </TaskProvider>
     </AuthProvider>
   );

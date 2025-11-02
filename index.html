@@ -12,7 +12,7 @@
         window.dispatchEvent(new CustomEvent('google-maps-api-loaded'));
       }
     </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDua4dwdQK2ImECypD3fWoYsn9nkfrpRGk&libraries=places&callback=initMap" defer onerror="console.error('Google Maps script failed to load. Check API key, network, and console for details.')"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDGCX4X1eJvLFGcsAqFSqDf5vEt0XhhAhQ&libraries=places&callback=initMap" defer onerror="window.dispatchEvent(new CustomEvent('google-maps-api-error', { detail: { message: 'Google Maps script failed to load. Please check your API key and ensure billing is enabled for your project.' } }))"></script>
     <script>
       tailwind.config = {
         theme: {
@@ -39,13 +39,22 @@
         },
       }
     </script>
+    
+    <!-- Payment Gateway SDKs -->
+    <!-- YOCO SDK -->
+    <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
+    <!-- PAYPAL SDK - IMPORTANT: Replace YOUR_LIVE_CLIENT_ID with your actual PayPal client ID -->
+    <!-- <script src="https://www.paypal.com/sdk/js?client-id=YOUR_LIVE_CLIENT_ID&currency=ZAR"></script> -->
+
   <script type="importmap">
 {
   "imports": {
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.4"
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.4",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^0.15.0",
+    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0"
   }
 }
 </script>

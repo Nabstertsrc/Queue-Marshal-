@@ -12,6 +12,7 @@ declare global {
 interface MapProps {
     tasks: Task[];
     onMarkerClick: (taskId: string) => void;
+    selectedTaskId?: string | null;
 }
 
 const mapStyles = [
@@ -86,39 +87,56 @@ const mapStyles = [
 ];
 
 
-const Map: React.FC<MapProps> = ({ tasks, onMarkerClick }) => {
+const Map: React.FC<MapProps> = ({ tasks, onMarkerClick, selectedTaskId }) => {
     const ref = useRef<HTMLDivElement>(null);
     const [map, setMap] = useState<any | null>(null);
     const [markers, setMarkers] = useState<{ [key: string]: any }>({});
+    const [mapError, setMapError] = useState<string | null>(null);
 
     useEffect(() => {
+        const handleApiError = (event: CustomEvent) => {
+            setMapError(event.detail.message || 'An unknown error occurred while loading Google Maps.');
+        };
+        
+        window.addEventListener('google-maps-api-error', handleApiError as EventListener);
+
         const initializeMap = () => {
-            if (ref.current && !map) {
-                const newMap = new window.google.maps.Map(ref.current, {
-                    center: { lat: -26.2041, lng: 28.0473 }, // Default to Johannesburg
-                    zoom: 10,
-                    styles: mapStyles,
-                    disableDefaultUI: true,
-                    zoomControl: true,
-                });
-                setMap(newMap);
+            if (ref.current && !map && !mapError) {
+                if (window.google && window.google.maps) {
+                    const newMap = new window.google.maps.Map(ref.current, {
+                        center: { lat: -26.2041, lng: 28.0473 },
+                        zoom: 10,
+                        styles: mapStyles,
+                        disableDefaultUI: true,
+                        zoomControl: true,
+                    });
+                    setMap(newMap);
+                }
             }
         };
 
-        if (window.google) {
+        if (window.googleMapsApiLoaded) {
             initializeMap();
         } else {
             window.addEventListener('google-maps-api-loaded', initializeMap);
         }
         
+        const timeoutId = setTimeout(() => {
+            if (!window.google && !mapError) {
+                setMapError('Google Maps failed to load. Please check the browser console for more details, verify your API key, and ensure billing is enabled.');
+            }
+        }, 5000);
+
         return () => {
             window.removeEventListener('google-maps-api-loaded', initializeMap);
+            window.removeEventListener('google-maps-api-error', handleApiError as EventListener);
+            clearTimeout(timeoutId);
         };
-    }, [ref, map]);
+    }, [ref, map, mapError]);
 
     useEffect(() => {
         if (map && window.google) {
-             // Clear old markers
+            // Clear existing markers
             Object.values(markers).forEach((marker: any) => marker.setMap(null));
             const newMarkers: { [key: string]: any } = {};
 
@@ -132,6 +150,8 @@ const Map: React.FC<MapProps> = ({ tasks, onMarkerClick }) => {
 
                 marker.addListener('click', () => {
                    onMarkerClick(task.id);
+                   map.panTo(task.location);
+                   map.setZoom(15);
                 });
                 newMarkers[task.id] = marker;
             });
@@ -141,6 +161,40 @@ const Map: React.FC<MapProps> = ({ tasks, onMarkerClick }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [map, tasks]);
 
+    useEffect(() => {
+        if (map && selectedTaskId) {
+            const task = tasks.find(t => t.id === selectedTaskId);
+            if (task) {
+                map.panTo(task.location);
+                map.setZoom(15);
+            }
+        }
+    }, [map, selectedTaskId, tasks]);
+
+    if (mapError) {
+        return (
+            <div className="h-full w-full bg-red-50 flex items-center justify-center p-4">
+                <div className="text-center">
+                    <h3 className="text-lg font-bold text-red-700">Map Error</h3>
+                    <p className="text-red-600 mt-2">{mapError}</p>
+                    <div className="mt-4 text-sm text-gray-600 text-left space-y-2 max-w-md mx-auto bg-red-100 p-4 rounded-lg border border-red-200">
+                        <p className="font-semibold">This can be caused by a few common API key configuration issues:</p>
+                        <ul className="list-disc list-inside space-y-1">
+                            <li>
+                                <strong>BillingNotEnabledMapError:</strong> Billing is not enabled for your Google Cloud project.
+                                <a href="https://developers.google.com/maps/documentation/javascript/error-messages#billing-not-enabled-map-error" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline ml-1 font-medium">How to fix.</a>
+                            </li>
+                            <li>
+                                <strong>ApiTargetBlockedMapError:</strong> Your API key is restricted and doesn't allow this website's URL.
+                                <a href="https://developers.google.com/maps/documentation/javascript/error-messages#api-target-blocked-map-error" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline ml-1 font-medium">How to fix.</a>
+                            </li>
+                        </ul>
+                        <p className="pt-2">Please check your API key settings in the Google Cloud Console to resolve this.</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return <div ref={ref} style={{ height: '100%', width: '100%' }} />;
 };

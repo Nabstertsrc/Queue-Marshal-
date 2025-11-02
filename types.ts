@@ -76,6 +76,7 @@ export interface AuthContextType {
   register: (userData: Omit<User, 'id' | 'balance'> & { password?: string }) => Promise<void>;
   logout: () => void;
   updateUser: (updatedUser: User) => void;
+  updateUserLocation: (location: { lat: number; lng: number }) => Promise<void>;
 }
 
 export interface TaskContextType {
@@ -88,4 +89,8 @@ export interface TaskContextType {
   addRating: (taskId: string, ratedUserId: string, rating: number, comment?: string) => Promise<void>;
   getTasksByRequester: (requesterId: string) => Task[];
   getTasksByMarshal: (marshalId: string) => Task[];
+}
+
+export interface LocationTrackingContextType {
+  isTracking: boolean;
 }

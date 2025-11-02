@@ -4,7 +4,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTasks } from '../contexts/TaskContext';
 import { UserIcon, DocumentIcon, BankIcon, TaskIcon } from '../components/icons/DashboardIcons';
 import { ChatIcon, StarIcon } from '../components/icons/MiscIcons';
+import { MapPinIcon } from '../components/icons/CardIcons';
 import RatingModal from '../components/RatingModal';
+import LiveTrackModal from '../components/LiveTrackModal';
 import type { Task, User } from '../types';
 import { TaskStatus, UserRole } from '../types';
 
@@ -13,6 +15,7 @@ type Tab = 'profile' | 'documents' | 'banking' | 'tasks';
 const DashboardPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<Tab>('profile');
     const [ratingTask, setRatingTask] = useState<Task | null>(null);
+    const [trackingTask, setTrackingTask] = useState<Task | null>(null);
     const { user, updateUser } = useAuth();
     const { getTasksByRequester, getTasksByMarshal, completeTask } = useTasks();
 
@@ -33,9 +36,14 @@ const DashboardPage: React.FC = () => {
         alert('Profile updated successfully!');
     };
 
-    const handleCompleteTask = (task: Task) => {
+    const handleCompleteTask = async (task: Task) => {
         if(window.confirm(`Are you sure you want to mark "${task.title}" as complete? This will release the payment.`)){
-            completeTask(task.id);
+            try {
+                await completeTask(task.id);
+            } catch (error: any) {
+                console.error("Failed to complete task:", error);
+                alert(`Error: ${error.message || 'An error occurred while completing the task.'}`);
+            }
         }
     }
 
@@ -142,7 +150,12 @@ const DashboardPage: React.FC = () => {
                                                 <ChatIcon className="h-4 w-4 mr-1"/> Chat
                                             </Link>
                                         )}
-                                        {user.role === UserRole.REQUESTER && task.status === TaskStatus.IN_PROGRESS && (
+                                        {user.role === UserRole.REQUESTER && task.status === TaskStatus.IN_PROGRESS && task.marshalId && (
+                                            <button onClick={() => setTrackingTask(task)} className="flex items-center text-sm text-white bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded-md">
+                                                <MapPinIcon className="h-4 w-4 mr-1"/> Track Marshal
+                                            </button>
+                                        )}
+                                        {user.role === UserRole.MARSHAL && task.status === TaskStatus.IN_PROGRESS && (
                                             <button onClick={() => handleCompleteTask(task)} className="text-sm text-white bg-accent hover:bg-green-600 px-3 py-1 rounded-md">
                                                 Mark as Complete
                                             </button>
@@ -192,6 +205,7 @@ const DashboardPage: React.FC = () => {
                 </div>
             </div>
             {ratingTask && <RatingModal task={ratingTask} onClose={() => setRatingTask(null)} />}
+            {trackingTask && <LiveTrackModal task={trackingTask} onClose={() => setTrackingTask(null)} />}
         </div>
     );
 };
