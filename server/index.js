@@ -3,12 +3,11 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 
 // --- Firebase Admin SDK Initialization ---
-// IMPORTANT: Make sure you have the 'serviceAccountKey.json' file in your server directory.
-// This file is generated from your Firebase project settings.
-const serviceAccount = require('./serviceAccountKey.json');
-
+// The server will now look for the credentials file at the path specified
+// by the GOOGLE_APPLICATION_CREDENTIALS environment variable.
+// Render will set this variable when you create a "Secret File".
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+  credential: admin.credential.applicationDefault()
 });
 
 const db = admin.firestore();

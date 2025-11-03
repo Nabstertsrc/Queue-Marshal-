@@ -1,0 +1,47 @@
+# This file configures the deployment for your application on Render.
+# It defines two services: a static site for the React frontend
+# and a web service for the Node.js backend.
+
+services:
+  # ------------------
+  # Frontend Service
+  # ------------------
+  - type: static
+    name: queue-marshal-client # Name for your frontend service
+    env: react # Specifies the environment, helps Render optimize
+    buildCommand: npm install && npm run build
+    publishDir: ./build # The folder where the built static files are located
+    # Rewrite all requests to index.html for client-side routing (Single Page App)
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    # Environment variables for the frontend
+    envVars:
+      - key: REACT_APP_API_URL
+        # This will be the URL of your backend service, which Render provides.
+        # You will set this value in the Render dashboard after the first deploy.
+        fromService:
+          type: web
+          name: queue-marshal-server
+          property: url
+
+  # ------------------
+  # Backend Service
+  # ------------------
+  - type: web
+    name: queue-marshal-server # Name for your backend service
+    env: node # Specifies the Node.js environment
+    rootDir: ./server # Specifies that commands should run in the 'server' directory
+    plan: free # Use Render's free tier
+    buildCommand: npm install
+    startCommand: npm start
+    # Environment variables for the backend
+    envVars:
+      - key: PORT
+        value: 10000 # Render provides the port, but this is a good practice
+      # IMPORTANT: The Firebase Service Account Key is a secret.
+      # You will add this as a "Secret File" in the Render dashboard, not here.
+      # The file path on Render will be: /etc/secrets/serviceAccountKey.json
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/secrets/serviceAccountKey.json

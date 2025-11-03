@@ -6,6 +6,8 @@ import { useAuth } from './AuthContext';
 
 const TaskContext = createContext<TaskContextType | null>(null);
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const { user } = useAuth();
@@ -31,13 +33,14 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addTask = useCallback(async (taskData: Omit<Task, 'id' | 'createdAt' | 'status' | 'requesterId' | 'paymentMethod'>, paymentMethod: PaymentMethod): Promise<Task> => {
     if (!user || !auth.currentUser) throw new Error("User not authenticated");
+    if (!API_URL) throw new Error("API URL is not configured. Please check your environment variables.");
 
     try {
       // Get the Firebase ID token for the current user.
       const token = await auth.currentUser.getIdToken();
 
       // Send the request to the backend server.
-      const response = await fetch('http://localhost:3001/api/tasks', {
+      const response = await fetch(`${API_URL}/api/tasks`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -62,10 +65,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const acceptTask = useCallback(async (taskId: string): Promise<void> => {
     if (!user || !auth.currentUser) throw new Error("User not authenticated");
+    if (!API_URL) throw new Error("API URL is not configured. Please check your environment variables.");
     
     try {
         const token = await auth.currentUser.getIdToken();
-        const response = await fetch(`http://localhost:3001/api/tasks/${taskId}/accept`, {
+        const response = await fetch(`${API_URL}/api/tasks/${taskId}/accept`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -85,10 +89,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const completeTask = useCallback(async (taskId: string): Promise<void> => {
     if (!user || !auth.currentUser) throw new Error("User not authenticated");
+    if (!API_URL) throw new Error("API URL is not configured. Please check your environment variables.");
 
     try {
         const token = await auth.currentUser.getIdToken();
-        const response = await fetch(`http://localhost:3001/api/tasks/${taskId}/complete`, {
+        const response = await fetch(`${API_URL}/api/tasks/${taskId}/complete`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
