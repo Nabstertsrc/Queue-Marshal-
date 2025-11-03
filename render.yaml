@@ -21,7 +21,6 @@ services:
         # This will be the URL of your backend service, which Render provides.
         # You will set this value in the Render dashboard after the first deploy.
         fromService:
-          type: web
           name: queue-marshal-server
           property: url
 
