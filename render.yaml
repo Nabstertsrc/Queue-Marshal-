@@ -6,7 +6,7 @@ services:
   # ------------------
   # Frontend Service
   # ------------------
-  - type: static
+  - type: static_site
     name: queue-marshal-client # Name for your frontend service
     env: react # Specifies the environment, helps Render optimize
     buildCommand: npm install && npm run build
