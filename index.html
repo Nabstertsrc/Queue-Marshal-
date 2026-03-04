@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/jpeg" href="/logo.jpg" />
+  <link rel="icon" type="image/jpeg" href="logo.jpg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Queue-Marshal | On-Demand Queue Service</title>
   <meta name="description"
@@ -19,10 +19,19 @@
       window.dispatchEvent(new CustomEvent('google-maps-api-loaded'));
     }
   </script>
-  <script
-    src="https://maps.googleapis.com/maps/api/js?key=%VITE_GOOGLE_MAPS_API_KEY%&libraries=places,marker&callback=initMap&loading=async"
-    async defer
-    onerror="window.dispatchEvent(new CustomEvent('google-maps-api-error', { detail: { message: 'Google Maps script failed to load.' } }))"></script>
+  <script type="module">
+    const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (key && !key.startsWith('%')) {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places,marker&callback=initMap&loading=async`;
+      script.async = true;
+      script.defer = true;
+      script.onerror = () => window.dispatchEvent(new CustomEvent('google-maps-api-error', { detail: { message: 'Google Maps script failed to load.' } }));
+      document.head.appendChild(script);
+    } else {
+      console.error('Google Maps API Key missing or incorrectly formatted in .env');
+    }
+  </script>
 
   <!-- Payment Gateway SDKs -->
   <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js" async></script>
@@ -47,7 +56,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script type="module" src="/index.tsx"></script>
+  <script type="module" src="index.tsx"></script>
 </body>
 
 </html>
