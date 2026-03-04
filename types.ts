@@ -1,6 +1,7 @@
 export enum UserRole {
   REQUESTER = 'requester',
   MARSHAL = 'marshal',
+  ADMIN = 'admin',
 }
 
 export enum TaskStatus {
@@ -12,6 +13,12 @@ export enum TaskStatus {
 export enum PaymentMethod {
   PREPAID = 'Pre-Paid',
   ON_THE_SPOT = 'On the Spot',
+}
+
+export enum VerificationStatus {
+  PENDING = 'pending',
+  VERIFIED = 'verified',
+  REJECTED = 'rejected',
 }
 
 export interface User {
@@ -28,6 +35,9 @@ export interface User {
   balance: number;
   averageRating?: number;
   ratingCount?: number;
+  verificationStatus?: VerificationStatus;
+  verifiedAt?: number;
+  isAdmin?: boolean;
 }
 
 export interface Task {
@@ -35,7 +45,7 @@ export interface Task {
   requesterId: string;
   marshalId?: string;
   title: string;
-  description:string;
+  description: string;
   location: {
     address: string;
     lat: number;
@@ -51,21 +61,21 @@ export interface Task {
 }
 
 export interface ChatMessage {
-    id: string;
-    taskId: string;
-    senderId: string;
-    text: string;
-    timestamp: number;
+  id: string;
+  taskId: string;
+  senderId: string;
+  text: string;
+  timestamp: number;
 }
 
 export interface Rating {
-    id: string;
-    taskId: string;
-    ratedUserId: string;
-    ratedByUserId: string;
-    rating: number; // 1-5
-    comment?: string;
-    createdAt: number;
+  id: string;
+  taskId: string;
+  ratedUserId: string;
+  ratedByUserId: string;
+  rating: number; // 1-5
+  comment?: string;
+  createdAt: number;
 }
 
 export interface AuthContextType {

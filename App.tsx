@@ -8,6 +8,7 @@ import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
 import ChatPage from './pages/ChatPage';
+import AdminPage from './pages/AdminPage';
 import SplashScreen from './components/SplashScreen';
 import Header from './components/Header';
 
@@ -16,7 +17,7 @@ const App: React.FC = () => {
     <AuthProvider>
       <TaskProvider>
         <LocationTrackingProvider>
-          <HashRouter>
+          <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Main />
           </HashRouter>
         </LocationTrackingProvider>
@@ -26,7 +27,7 @@ const App: React.FC = () => {
 };
 
 const Main: React.FC = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const location = useLocation();
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
@@ -35,7 +36,7 @@ const Main: React.FC = () => {
   }
 
   return (
-    <div className={`flex flex-col h-screen ${isAuthPage ? 'bg-transparent' : 'bg-secondary'}`}>
+    <div className={`flex flex-col h-screen ${isAuthPage ? 'bg-transparent' : 'bg-dark-900'}`}>
       {isAuthenticated && <Header />}
       <Routes>
         <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/" />} />
@@ -43,6 +44,7 @@ const Main: React.FC = () => {
         <Route path="/" element={isAuthenticated ? <HomePage /> : <Navigate to="/login" />} />
         <Route path="/dashboard" element={isAuthenticated ? <DashboardPage /> : <Navigate to="/login" />} />
         <Route path="/chat/:taskId" element={isAuthenticated ? <ChatPage /> : <Navigate to="/login" />} />
+        <Route path="/admin" element={isAuthenticated && user?.isAdmin ? <AdminPage /> : <Navigate to="/" />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </div>

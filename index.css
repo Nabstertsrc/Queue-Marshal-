@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1A1A1A;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4D4D4D;
+}
+
+/* Smooth transitions */
+.transition-uber {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(26, 26, 26, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Input focus glow */
+input:focus, textarea:focus, select:focus {
+  box-shadow: 0 0 0 2px rgba(0, 210, 106, 0.2);
+}
+
+/* Google Maps autocomplete dropdown dark theme */
+.pac-container {
+  background-color: #1A1A1A;
+  border: 1px solid #333;
+  border-radius: 12px;
+  margin-top: 4px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+.pac-item {
+  border-top: 1px solid #262626;
+  padding: 8px 12px;
+  color: #E0E0E0;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+}
+.pac-item:hover {
+  background-color: #262626;
+}
+.pac-item-query {
+  color: #FFFFFF;
+  font-size: 13px;
+}
+.pac-matched {
+  color: #00D26A;
+}
+.pac-icon {
+  filter: invert(1) brightness(0.7);
+}

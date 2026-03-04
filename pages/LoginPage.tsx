@@ -21,9 +21,9 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       await login(email, password, role);
-      navigate('/');
+      navigate(role === UserRole.ADMIN ? '/admin' : '/');
     } catch (err: any) {
-      setError(err.message || 'Failed to log in. Please check your credentials.');
+      setError(err.message || 'Failed to log in.');
     } finally {
       setLoading(false);
     }
@@ -32,77 +32,102 @@ const LoginPage: React.FC = () => {
   return (
     <>
       <AnimatedBackground />
-      <div className="min-h-screen bg-transparent flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="min-h-screen bg-transparent flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md animate-slide-up">
           <div className="flex justify-center">
-              <LogoIcon className="h-12 w-auto text-primary" />
+            <LogoIcon className="h-12 w-auto sm:h-14" />
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Welcome Back
+          <h2 className="mt-4 sm:mt-6 text-center text-2xl sm:text-3xl font-bold text-white tracking-tight">
+            Welcome back
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Log in to continue.
+          <p className="mt-1 text-center text-sm text-dark-200">
+            Sign in to your account
           </p>
         </div>
 
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white py-8 px-4 shadow-xl sm:rounded-lg sm:px-10">
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">{error}</div>}
-              
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email Address</label>
-                <div className="mt-1">
-                  <input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
+        <div className="mt-6 sm:mt-8 sm:mx-auto sm:w-full sm:max-w-md animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <div className="glass rounded-2xl py-6 sm:py-8 px-5 sm:px-10 shadow-2xl">
+            <form className="space-y-4 sm:space-y-5" onSubmit={handleSubmit}>
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm animate-fade-in" role="alert">
+                  {error}
                 </div>
+              )}
+
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-dark-100 mb-1.5">Email</label>
+                <input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="w-full px-4 py-3 bg-dark-700 border border-dark-500 rounded-xl text-white placeholder-dark-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 text-sm" />
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-                <div className="mt-1">
-                  <input id="password" name="password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
+                <label htmlFor="password" className="block text-sm font-medium text-dark-100 mb-1.5">Password</label>
+                <input id="password" name="password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 bg-dark-700 border border-dark-500 rounded-xl text-white placeholder-dark-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 text-sm" />
+              </div>
+
+              {/* Role Selection */}
+              <div>
+                <label className="block text-sm font-medium text-dark-100 mb-2">I am a</label>
+                <div className="flex bg-dark-700 rounded-xl p-1 border border-dark-500">
+                  <button
+                    type="button"
+                    onClick={() => setRole(UserRole.REQUESTER)}
+                    className={`flex-1 py-2.5 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 ${role === UserRole.REQUESTER
+                      ? 'bg-primary text-dark-900 shadow-lg shadow-primary/25'
+                      : 'text-dark-200 hover:text-white'
+                      }`}
+                  >
+                    Requester
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRole(UserRole.MARSHAL)}
+                    className={`flex-1 py-2.5 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 ${role === UserRole.MARSHAL
+                      ? 'bg-primary text-dark-900 shadow-lg shadow-primary/25'
+                      : 'text-dark-200 hover:text-white'
+                      }`}
+                  >
+                    Marshal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRole(UserRole.ADMIN)}
+                    className={`flex-1 py-2.5 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 ${role === UserRole.ADMIN
+                      ? 'bg-primary text-dark-900 shadow-lg shadow-primary/25'
+                      : 'text-dark-200 hover:text-white'
+                      }`}
+                  >
+                    Admin
+                  </button>
                 </div>
               </div>
-              
-              <div>
-                   <label className="block text-sm font-medium text-gray-700">I am a...</label>
-                   <div className="mt-2 flex items-center justify-around">
-                       <label className="inline-flex items-center">
-                           <input type="radio" className="form-radio h-4 w-4 text-primary focus:ring-primary" name="role" value={UserRole.REQUESTER} checked={role === UserRole.REQUESTER} onChange={() => setRole(UserRole.REQUESTER)}/>
-                           <span className="ml-2 text-gray-700">Requester</span>
-                       </label>
-                       <label className="inline-flex items-center">
-                           <input type="radio" className="form-radio h-4 w-4 text-primary focus:ring-primary" name="role" value={UserRole.MARSHAL} checked={role === UserRole.MARSHAL} onChange={() => setRole(UserRole.MARSHAL)}/>
-                           <span className="ml-2 text-gray-700">Marshal</span>
-                       </label>
-                   </div>
-               </div>
 
-              <div>
-                <button type="submit" disabled={loading}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:bg-primary-300">
-                  {loading ? 'Logging in...' : 'Log In'}
-                </button>
-              </div>
+              <button type="submit" disabled={loading}
+                className="w-full py-3 sm:py-3.5 px-4 bg-primary text-dark-900 font-semibold rounded-xl shadow-lg shadow-primary/25 hover:bg-primary-400 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm">
+                {loading ? (
+                  <span className="flex items-center justify-center space-x-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z" /></svg>
+                    <span>Signing in...</span>
+                  </span>
+                ) : 'Sign In'}
+              </button>
             </form>
 
-            <div className="mt-6">
+            <div className="mt-5 sm:mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
+                  <div className="w-full border-t border-dark-500"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">
-                    Don't have an account?
-                  </span>
+                  <span className="px-3 bg-transparent text-dark-300">New here?</span>
                 </div>
               </div>
-
-              <div className="mt-6">
-                 <Link to="/register" className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                  Sign up
+              <div className="mt-3 sm:mt-4">
+                <Link to="/register" className="w-full flex justify-center py-2.5 sm:py-3 px-4 border border-dark-400 rounded-xl text-sm font-medium text-white hover:bg-dark-600 transition-all duration-200">
+                  Create an account
                 </Link>
               </div>
             </div>

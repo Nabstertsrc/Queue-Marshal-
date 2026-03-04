@@ -1,29 +1,97 @@
 const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
+const crypto = require('crypto');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 // --- Firebase Admin SDK Initialization ---
-// The server will now look for the credentials file at the path specified
-// by the GOOGLE_APPLICATION_CREDENTIALS environment variable.
-// Render will set this variable when you create a "Secret File".
 admin.initializeApp({
-  credential: admin.credential.applicationDefault()
+    credential: admin.credential.applicationDefault()
 });
 
 const db = admin.firestore();
 
-
-// Create an instance of the Express application
 const app = express();
-
-// Define the port the server will run on.
 const PORT = process.env.PORT || 3001;
 
-// --- Middleware ---
-app.use(cors());
-app.use(express.json());
+// Admin email - only this email can have admin access
+const ADMIN_EMAIL = 'nabstertsr@gmail.com';
 
-// Authentication middleware to verify Firebase ID tokens
+// --- Encryption Utilities ---
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex').slice(0, 64);
+const IV_LENGTH = 16;
+
+function encrypt(text) {
+    if (!text) return text;
+    const iv = crypto.randomBytes(IV_LENGTH);
+    const key = Buffer.from(ENCRYPTION_KEY, 'hex');
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return iv.toString('hex') + ':' + encrypted;
+}
+
+function decrypt(text) {
+    if (!text || !text.includes(':')) return text;
+    const parts = text.split(':');
+    const iv = Buffer.from(parts[0], 'hex');
+    const key = Buffer.from(ENCRYPTION_KEY, 'hex');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+    let decrypted = decipher.update(parts[1], 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+}
+
+function hashSensitiveData(data) {
+    return crypto.createHash('sha256').update(data).digest('hex');
+}
+
+// --- Middleware ---
+// Security headers
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: false, // Let frontend handle CSP
+}));
+
+// CORS - restrict to allowed origins in production
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : ['http://localhost:3000', 'http://localhost:5173'];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+app.use(express.json({ limit: '10kb' })); // Limit body size
+
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // max 100 requests per window per IP
+    message: { error: 'Too many requests, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.use('/api/', limiter);
+
+// Stricter rate limit for auth operations
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    message: { error: 'Too many authentication attempts. Try again later.' },
+});
+
+// Authentication middleware
 const authenticate = async (req, res, next) => {
     const { authorization } = req.headers;
 
@@ -34,74 +102,126 @@ const authenticate = async (req, res, next) => {
     const token = authorization.split('Bearer ')[1];
     try {
         const decodedToken = await admin.auth().verifyIdToken(token);
-        req.user = decodedToken; // Add decoded user info to the request object
+        req.user = decodedToken;
         next();
     } catch (error) {
-        console.error('Error verifying token:', error);
-        return res.status(403).json({ error: 'Forbidden: Invalid token.' });
+        console.error('Error verifying token:', error.message);
+        return res.status(403).json({ error: 'Forbidden: Invalid or expired token.' });
     }
 };
+
+// Admin-only middleware
+const requireAdmin = async (req, res, next) => {
+    try {
+        const userDoc = await db.collection('users').doc(req.user.uid).get();
+        if (!userDoc.exists || !userDoc.data().isAdmin) {
+            return res.status(403).json({ error: 'Forbidden: Admin access required.' });
+        }
+        // Double-check: verify the email matches the designated admin
+        if (req.user.email !== ADMIN_EMAIL) {
+            return res.status(403).json({ error: 'Forbidden: Unauthorized admin access attempt.' });
+        }
+        req.adminUser = userDoc.data();
+        next();
+    } catch (error) {
+        return res.status(500).json({ error: 'Server error during admin verification.' });
+    }
+};
+
+// Input sanitizer
+function sanitizeString(str) {
+    if (typeof str !== 'string') return str;
+    return str.replace(/[<>]/g, '').trim().slice(0, 500);
+}
 
 
 // --- API Routes ---
 
 app.get('/api/test', (req, res) => {
-  res.json({ message: 'Hello from the server! Your backend is up and running.' });
+    res.json({ message: 'Queue-Marshal API is running.', version: '2.0.0', timestamp: Date.now() });
 });
 
-// Create a new task (Protected Route)
+// Health check
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'healthy', uptime: process.uptime() });
+});
+
+
+// === TASK ROUTES === //
+
+// Create a new task (Protected)
 app.post('/api/tasks', authenticate, async (req, res) => {
     try {
         const { taskData, paymentMethod } = req.body;
-        const { uid } = req.user; // User ID from the authenticated token
+        const { uid } = req.user;
 
         if (!taskData || !paymentMethod) {
-            return res.status(400).json({ error: 'Missing task data or payment method.'});
+            return res.status(400).json({ error: 'Missing task data or payment method.' });
         }
-        
-        // 1. Securely destructure only the fields we expect from the client.
-        // This prevents users from injecting unexpected data.
+
         const { title, description, location, fee, duration } = taskData;
 
-        // 2. Add robust server-side validation.
+        // Validate
         if (!title || !description || !location || !fee || !duration) {
-             return res.status(400).json({ error: 'Incomplete task data. All fields are required.' });
+            return res.status(400).json({ error: 'All fields are required.' });
         }
         if (typeof fee !== 'number' || typeof duration !== 'number' || fee <= 0 || duration <= 0) {
-            return res.status(400).json({ error: 'Invalid fee or duration. They must be positive numbers.' });
+            return res.status(400).json({ error: 'Invalid fee or duration.' });
         }
-        if (!location.address || !location.lat || !location.lng) {
-            return res.status(400).json({ error: 'Invalid location data provided.' });
+        if (fee > 10000) {
+            return res.status(400).json({ error: 'Fee cannot exceed R10,000.' });
+        }
+        if (!location.address || typeof location.lat !== 'number' || typeof location.lng !== 'number') {
+            return res.status(400).json({ error: 'Invalid location data.' });
+        }
+        if (!['Pre-Paid', 'On the Spot'].includes(paymentMethod)) {
+            return res.status(400).json({ error: 'Invalid payment method.' });
         }
 
-        // 3. Construct the new object on the server, ensuring data integrity.
+        // Sanitize strings
+        const sanitizedTitle = sanitizeString(title);
+        const sanitizedDescription = sanitizeString(description);
+        const sanitizedAddress = sanitizeString(location.address);
+
         const newTaskPayload = {
-            title,
-            description,
-            location,
+            title: sanitizedTitle,
+            description: sanitizedDescription,
+            location: {
+                address: sanitizedAddress,
+                lat: location.lat,
+                lng: location.lng,
+            },
             fee,
             duration,
-            requesterId: uid, // Securely set from the verified token
+            requesterId: uid,
             createdAt: Date.now(),
             status: 'Open',
             paymentMethod: paymentMethod,
-            marshalId: null,      // Initialize optional fields to a known safe state
+            marshalId: null,
             requesterRated: false,
             marshalRated: false,
         };
 
         const docRef = await db.collection('tasks').add(newTaskPayload);
-        
-        // Return the newly created task with its ID
+
+        // Log the action
+        await db.collection('audit_log').add({
+            action: 'task_created',
+            userId: uid,
+            taskId: docRef.id,
+            timestamp: Date.now(),
+            details: { title: sanitizedTitle, fee, paymentMethod },
+        });
+
         res.status(201).json({ ...newTaskPayload, id: docRef.id });
 
     } catch (error) {
         console.error('Error creating task:', error);
-        res.status(500).json({ error: 'An internal server error occurred while creating the task.' });
+        res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
-// Accept a task (Protected Route for Marshals)
+// Accept a task (Protected; marshal must be verified)
 app.post('/api/tasks/:taskId/accept', authenticate, async (req, res) => {
     const { taskId } = req.params;
     const { uid } = req.user;
@@ -111,18 +231,27 @@ app.post('/api/tasks/:taskId/accept', authenticate, async (req, res) => {
     try {
         await db.runTransaction(async (transaction) => {
             const taskDoc = await transaction.get(taskRef);
-            if (!taskDoc.exists) {
-                throw new Error('Task not found.');
-            }
+            if (!taskDoc.exists) throw new Error('Task not found.');
 
             const userDoc = await transaction.get(userRef);
             if (!userDoc.exists || userDoc.data().role !== 'marshal') {
-                 throw new Error('User is not authorized to accept tasks.');
+                throw new Error('Only marshals can accept tasks.');
+            }
+
+            // Check verification status
+            const userData = userDoc.data();
+            if (userData.verificationStatus !== 'verified') {
+                throw new Error('Your account must be verified before accepting tasks. Please wait for admin approval.');
             }
 
             const taskData = taskDoc.data();
             if (taskData.status !== 'Open') {
-                throw new Error('Task is no longer available.');
+                throw new Error('This task is no longer available.');
+            }
+
+            // Prevent self-assignment
+            if (taskData.requesterId === uid) {
+                throw new Error('You cannot accept your own task.');
             }
 
             transaction.update(taskRef, {
@@ -130,37 +259,43 @@ app.post('/api/tasks/:taskId/accept', authenticate, async (req, res) => {
                 marshalId: uid,
             });
         });
-        res.status(200).json({ success: true, message: 'Task accepted successfully.' });
+
+        // Audit log
+        await db.collection('audit_log').add({
+            action: 'task_accepted',
+            userId: uid,
+            taskId,
+            timestamp: Date.now(),
+        });
+
+        res.status(200).json({ success: true, message: 'Task accepted.' });
     } catch (error) {
         console.error(`Error accepting task ${taskId}:`, error);
         res.status(400).json({ error: error.message || 'Could not accept task.' });
     }
 });
 
-// Complete a task (Protected Route for assigned Marshal)
+// Complete a task (Protected; assigned marshal only)
 app.post('/api/tasks/:taskId/complete', authenticate, async (req, res) => {
     const { taskId } = req.params;
-    const { uid } = req.user; // This is the marshal completing the task
+    const { uid } = req.user;
     const taskRef = db.collection('tasks').doc(taskId);
 
     try {
         await db.runTransaction(async (transaction) => {
             const taskDoc = await transaction.get(taskRef);
-            if (!taskDoc.exists) {
-                throw new Error("Task not found.");
-            }
+            if (!taskDoc.exists) throw new Error('Task not found.');
 
             const taskData = taskDoc.data();
 
-            // --- Server-Side Validation ---
             if (taskData.marshalId !== uid) {
-                throw new Error("Only the assigned marshal can complete this task.");
+                throw new Error('Only the assigned marshal can complete this task.');
             }
             if (taskData.status !== 'In Progress') {
-                throw new Error("Task cannot be completed as it's not in progress.");
+                throw new Error("Task is not in progress.");
             }
 
-            // --- Payment Logic for Pre-Paid Tasks ---
+            // Payment logic for Pre-Paid tasks
             if (taskData.paymentMethod === 'Pre-Paid') {
                 const requesterRef = db.collection('users').doc(taskData.requesterId);
                 const marshalRef = db.collection('users').doc(taskData.marshalId);
@@ -171,28 +306,32 @@ app.post('/api/tasks/:taskId/complete', authenticate, async (req, res) => {
                 ]);
 
                 if (!requesterDoc.exists || !marshalDoc.exists) {
-                    throw new Error("Requester or marshal account not found.");
+                    throw new Error('Requester or marshal account not found.');
                 }
 
                 const requesterData = requesterDoc.data();
                 const marshalData = marshalDoc.data();
                 const fee = taskData.fee;
+                const commission = fee * 0.15;
+                const marshalPayout = fee - commission;
 
-                // Note: In a real app, this would involve a more robust escrow system.
-                // This simulates the transfer from a user's balance.
                 if (requesterData.balance < fee) {
-                    throw new Error("Requester has insufficient funds. Please contact support.");
+                    throw new Error('Requester has insufficient funds.');
                 }
 
-                const newRequesterBalance = requesterData.balance - fee;
-                const newMarshalBalance = marshalData.balance + fee;
-
-                transaction.update(requesterRef, { balance: newRequesterBalance });
-                transaction.update(marshalRef, { balance: newMarshalBalance });
+                transaction.update(requesterRef, { balance: requesterData.balance - fee });
+                transaction.update(marshalRef, { balance: marshalData.balance + marshalPayout });
             }
 
-            // --- Finalize Task ---
             transaction.update(taskRef, { status: 'Completed' });
+        });
+
+        // Audit
+        await db.collection('audit_log').add({
+            action: 'task_completed',
+            userId: uid,
+            taskId,
+            timestamp: Date.now(),
         });
 
         res.status(200).json({ success: true, message: 'Task completed and payment processed.' });
@@ -203,8 +342,246 @@ app.post('/api/tasks/:taskId/complete', authenticate, async (req, res) => {
     }
 });
 
+// Delete a task (Protected; requester only, only if still Open)
+app.delete('/api/tasks/:taskId', authenticate, async (req, res) => {
+    const { taskId } = req.params;
+    const { uid } = req.user;
+
+    try {
+        const taskRef = db.collection('tasks').doc(taskId);
+        const taskDoc = await taskRef.get();
+
+        if (!taskDoc.exists) {
+            return res.status(404).json({ error: 'Task not found.' });
+        }
+
+        const taskData = taskDoc.data();
+        if (taskData.requesterId !== uid) {
+            return res.status(403).json({ error: 'Only the task creator can delete this task.' });
+        }
+        if (taskData.status !== 'Open') {
+            return res.status(400).json({ error: 'Can only delete tasks that are still open.' });
+        }
+
+        await taskRef.delete();
+
+        await db.collection('audit_log').add({
+            action: 'task_deleted',
+            userId: uid,
+            taskId,
+            timestamp: Date.now(),
+        });
+
+        res.status(200).json({ success: true, message: 'Task deleted.' });
+    } catch (error) {
+        console.error(`Error deleting task ${taskId}:`, error);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+// Add a rating (Protected)
+app.post('/api/tasks/:taskId/rate', authenticate, async (req, res) => {
+    const { taskId } = req.params;
+    const { uid } = req.user;
+    const { ratedUserId, rating, comment } = req.body;
+
+    try {
+        if (!ratedUserId || !rating || typeof rating !== 'number' || rating < 1 || rating > 5) {
+            return res.status(400).json({ error: 'Invalid rating. Must be 1-5.' });
+        }
+
+        const taskRef = db.collection('tasks').doc(taskId);
+        const taskDoc = await taskRef.get();
+
+        if (!taskDoc.exists) return res.status(404).json({ error: 'Task not found.' });
+
+        const taskData = taskDoc.data();
+        if (taskData.status !== 'Completed') {
+            return res.status(400).json({ error: 'Can only rate completed tasks.' });
+        }
+
+        // Verify the rater is involved in the task
+        if (uid !== taskData.requesterId && uid !== taskData.marshalId) {
+            return res.status(403).json({ error: 'Not authorized to rate this task.' });
+        }
+
+        // Check duplicate ratings
+        const isRequester = uid === taskData.requesterId;
+        if (isRequester && taskData.requesterRated) {
+            return res.status(400).json({ error: 'You have already rated this task.' });
+        }
+        if (!isRequester && taskData.marshalRated) {
+            return res.status(400).json({ error: 'You have already rated this task.' });
+        }
+
+        // Save rating
+        const ratingData = {
+            taskId,
+            ratedUserId,
+            ratedByUserId: uid,
+            rating,
+            comment: comment ? sanitizeString(comment) : '',
+            createdAt: Date.now(),
+        };
+
+        await db.collection('ratings').add(ratingData);
+
+        // Update task rated flag
+        await taskRef.update({
+            [isRequester ? 'requesterRated' : 'marshalRated']: true,
+        });
+
+        // Update rated user's average
+        const ratedUserRef = db.collection('users').doc(ratedUserId);
+        const ratedUserDoc = await ratedUserRef.get();
+        if (ratedUserDoc.exists) {
+            const userData = ratedUserDoc.data();
+            const currentCount = userData.ratingCount || 0;
+            const currentAvg = userData.averageRating || 0;
+            const newCount = currentCount + 1;
+            const newAvg = ((currentAvg * currentCount) + rating) / newCount;
+
+            await ratedUserRef.update({
+                averageRating: Math.round(newAvg * 100) / 100,
+                ratingCount: newCount,
+            });
+        }
+
+        res.status(201).json({ success: true, message: 'Rating submitted.' });
+
+    } catch (error) {
+        console.error(`Error rating task ${taskId}:`, error);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+
+// === ADMIN ROUTES === //
+
+// Get all marshals (Admin only)
+app.get('/api/admin/marshals', authenticate, requireAdmin, async (req, res) => {
+    try {
+        const snapshot = await db.collection('users').where('role', '==', 'marshal').get();
+        const marshals = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                name: data.name,
+                surname: data.surname,
+                email: data.email,
+                cellphone: data.cellphone,
+                idNumber: data.idNumber ? '***' + data.idNumber.slice(-4) : 'N/A', // Mask sensitive data
+                verificationStatus: data.verificationStatus || 'pending',
+                verifiedAt: data.verifiedAt,
+                averageRating: data.averageRating,
+                ratingCount: data.ratingCount,
+                balance: data.balance,
+            };
+        });
+        res.json({ marshals });
+    } catch (error) {
+        console.error('Error fetching marshals:', error);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+// Verify/Reject a marshal (Admin only)
+app.post('/api/admin/verify-marshal', authenticate, requireAdmin, async (req, res) => {
+    try {
+        const { marshalId, status } = req.body;
+
+        if (!marshalId || !['verified', 'rejected', 'pending'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid marshalId or status.' });
+        }
+
+        const marshalRef = db.collection('users').doc(marshalId);
+        const marshalDoc = await marshalRef.get();
+
+        if (!marshalDoc.exists || marshalDoc.data().role !== 'marshal') {
+            return res.status(404).json({ error: 'Marshal not found.' });
+        }
+
+        const updateData = {
+            verificationStatus: status,
+            verifiedAt: status === 'verified' ? Date.now() : null,
+        };
+
+        await marshalRef.update(updateData);
+
+        // Audit log
+        await db.collection('audit_log').add({
+            action: `marshal_${status}`,
+            adminId: req.user.uid,
+            marshalId,
+            timestamp: Date.now(),
+        });
+
+        res.status(200).json({ success: true, message: `Marshal ${status} successfully.` });
+    } catch (error) {
+        console.error('Error verifying marshal:', error);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+// Get audit log (Admin only)
+app.get('/api/admin/audit-log', authenticate, requireAdmin, async (req, res) => {
+    try {
+        const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+        const snapshot = await db.collection('audit_log')
+            .orderBy('timestamp', 'desc')
+            .limit(limit)
+            .get();
+
+        const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.json({ logs });
+    } catch (error) {
+        console.error('Error fetching audit log:', error);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+
+// === ENCRYPTION ENDPOINTS (for sensitive user data) === //
+
+// Encrypt sensitive user data on registration
+app.post('/api/secure/encrypt-user-data', authenticate, async (req, res) => {
+    try {
+        const { idNumber, bankAccount } = req.body;
+        const encryptedData = {};
+
+        if (idNumber) {
+            encryptedData.idNumberEncrypted = encrypt(idNumber);
+            encryptedData.idNumberHash = hashSensitiveData(idNumber);
+        }
+        if (bankAccount) {
+            encryptedData.bankAccountEncrypted = encrypt(bankAccount);
+        }
+
+        // Store encrypted data in the user's document
+        await db.collection('users').doc(req.user.uid).update(encryptedData);
+
+        res.json({ success: true, message: 'Sensitive data encrypted and stored.' });
+    } catch (error) {
+        console.error('Error encrypting user data:', error);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+
+// --- Error Handler ---
+app.use((err, req, res, next) => {
+    console.error('Unhandled error:', err);
+    res.status(500).json({ error: 'An unexpected error occurred.' });
+});
+
+// --- 404 Handler ---
+app.use((req, res) => {
+    res.status(404).json({ error: 'Not found.' });
+});
+
 
 // --- Server Startup ---
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Queue-Marshal Server v2.0 running on http://localhost:${PORT}`);
+    console.log(`CORS allowed origins: ${allowedOrigins.join(', ')}`);
 });

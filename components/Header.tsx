@@ -4,14 +4,23 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { LogoIcon } from './icons/LogoIcon';
 import { UserIcon, DashboardIcon, LogoutIcon } from './icons/HeaderIcons';
+import { VerificationStatus } from '../types';
+
+const VerifiedBadge: React.FC<{ className?: string }> = ({ className = '' }) => (
+  <svg className={`w-4 h-4 text-primary ${className}`} viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+  </svg>
+);
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
   const isActive = (path: string) => location.pathname === path;
+  const isVerified = user?.verificationStatus === VerificationStatus.VERIFIED;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -24,50 +33,131 @@ const Header: React.FC = () => {
   }, []);
 
   return (
-    <header className="bg-white shadow-md w-full sticky top-0 z-50">
+    <header className="bg-dark-900 border-b border-dark-600/50 w-full sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-14 sm:h-16">
+          {/* Logo + Nav */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2">
-              <LogoIcon className="h-8 w-8 text-primary" />
-              <span className="font-bold text-xl text-gray-800">Queue-Marshal</span>
+            <Link to="/" className="flex items-center space-x-2 group">
+              <LogoIcon className="h-7 w-7 sm:h-8 sm:w-8 transition-transform group-hover:scale-110" />
+              <span className="font-bold text-lg sm:text-xl text-white tracking-tight hidden xs:inline">Queue-Marshal</span>
             </Link>
-            <nav className="hidden md:flex items-center space-x-4 ml-10">
-              <Link to="/" className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/') ? 'text-primary bg-primary-50' : 'text-gray-600 hover:bg-gray-100'}`}>Tasks</Link>
-              <Link to="/dashboard" className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/dashboard') ? 'text-primary bg-primary-50' : 'text-gray-600 hover:bg-gray-100'}`}>Dashboard</Link>
+            <nav className="hidden md:flex items-center space-x-1 ml-8">
+              <Link to="/" className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive('/') ? 'text-white bg-dark-600' : 'text-dark-200 hover:text-white hover:bg-dark-700'}`}>
+                Tasks
+              </Link>
+              <Link to="/dashboard" className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive('/dashboard') ? 'text-white bg-dark-600' : 'text-dark-200 hover:text-white hover:bg-dark-700'}`}>
+                Dashboard
+              </Link>
+              {user?.isAdmin && (
+                <Link to="/admin" className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive('/admin') ? 'text-white bg-dark-600' : 'text-dark-200 hover:text-white hover:bg-dark-700'}`}>
+                  <span className="flex items-center space-x-1.5">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                    <span>Admin</span>
+                  </span>
+                </Link>
+              )}
             </nav>
           </div>
-          <div className="relative" ref={dropdownRef}>
-            <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-primary transition">
-              <img className="h-8 w-8 rounded-full object-cover" src={`https://i.pravatar.cc/150?u=${user?.id}`} alt="User avatar" />
-            </button>
-            {dropdownOpen && (
-              <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                <div className="py-1">
-                  <div className="px-4 py-2">
-                    <p className="text-sm font-medium text-gray-900 truncate">{user?.name} {user?.surname}</p>
-                    <p className="text-sm text-gray-500 truncate">{user?.email}</p>
-                  </div>
-                  <div className="border-t border-gray-100"></div>
-                  <Link to="/dashboard" onClick={() => setDropdownOpen(false)} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <DashboardIcon className="mr-3 h-5 w-5 text-gray-500" />
-                    Dashboard
-                  </Link>
-                   <Link to="/dashboard" onClick={() => setDropdownOpen(false)} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <UserIcon className="mr-3 h-5 w-5 text-gray-500" />
-                    Profile
-                  </Link>
-                  <div className="border-t border-gray-100"></div>
-                  <button onClick={() => { logout(); setDropdownOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <LogoutIcon className="mr-3 h-5 w-5 text-gray-500" />
-                    Log out
-                  </button>
-                </div>
+
+          {/* Right side */}
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            {/* Balance */}
+            <div className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-dark-700 border border-dark-500">
+              <span className="text-[10px] text-dark-300">BAL</span>
+              <span className="text-xs font-bold text-primary">R{user?.balance?.toFixed(2) || '0.00'}</span>
+            </div>
+
+            {/* Verification badge */}
+            {user?.role === 'marshal' && (
+              <div className={`hidden sm:flex items-center space-x-1 px-2 py-1 rounded-md text-[10px] font-semibold ${isVerified ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-400'
+                }`}>
+                {isVerified ? <VerifiedBadge className="w-3 h-3" /> : <span className="w-1.5 h-1.5 bg-amber-400 rounded-full"></span>}
+                <span>{isVerified ? 'Verified' : 'Pending'}</span>
               </div>
             )}
+
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-dark-700 text-dark-200"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+
+            {/* Avatar dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center p-0.5 rounded-full hover:ring-2 hover:ring-dark-500 transition-all duration-200 focus:outline-none">
+                <img className="h-8 w-8 sm:h-9 sm:w-9 rounded-full object-cover ring-2 ring-dark-500" src={`https://i.pravatar.cc/150?u=${user?.id}`} alt="Avatar" />
+              </button>
+              {dropdownOpen && (
+                <div className="origin-top-right absolute right-0 mt-2 w-60 rounded-xl shadow-2xl bg-dark-800 border border-dark-600 animate-scale-in overflow-hidden z-50">
+                  <div className="p-4 border-b border-dark-600">
+                    <div className="flex items-center space-x-3">
+                      <img className="h-10 w-10 rounded-full object-cover" src={`https://i.pravatar.cc/150?u=${user?.id}`} alt="" />
+                      <div className="min-w-0">
+                        <div className="flex items-center space-x-1">
+                          <p className="text-sm font-semibold text-white truncate">{user?.name} {user?.surname}</p>
+                          {isVerified && <VerifiedBadge />}
+                        </div>
+                        <p className="text-xs text-dark-400 truncate">{user?.email}</p>
+                      </div>
+                    </div>
+                    {/* Mobile balance */}
+                    <div className="sm:hidden mt-3 flex items-center justify-between px-3 py-2 bg-dark-700 rounded-lg">
+                      <span className="text-xs text-dark-300">Balance</span>
+                      <span className="text-sm font-bold text-primary">R{user?.balance?.toFixed(2) || '0.00'}</span>
+                    </div>
+                  </div>
+                  <div className="py-1">
+                    <Link to="/dashboard" onClick={() => setDropdownOpen(false)} className="flex items-center px-4 py-2.5 text-sm text-dark-100 hover:bg-dark-700 transition-colors">
+                      <DashboardIcon className="mr-3 h-4 w-4 text-dark-300" />Dashboard
+                    </Link>
+                    <Link to="/dashboard" onClick={() => setDropdownOpen(false)} className="flex items-center px-4 py-2.5 text-sm text-dark-100 hover:bg-dark-700 transition-colors">
+                      <UserIcon className="mr-3 h-4 w-4 text-dark-300" />Profile
+                    </Link>
+                    {user?.isAdmin && (
+                      <Link to="/admin" onClick={() => setDropdownOpen(false)} className="flex items-center px-4 py-2.5 text-sm text-dark-100 hover:bg-dark-700 transition-colors">
+                        <svg className="mr-3 h-4 w-4 text-dark-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                        Admin Panel
+                      </Link>
+                    )}
+                    <div className="border-t border-dark-600 my-1"></div>
+                    <button onClick={() => { logout(); setDropdownOpen(false); }} className="w-full text-left flex items-center px-4 py-2.5 text-sm text-red-400 hover:bg-dark-700 transition-colors">
+                      <LogoutIcon className="mr-3 h-4 w-4 text-red-400" />Log out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Mobile nav menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-dark-700 bg-dark-800 animate-slide-down">
+          <div className="px-4 py-3 space-y-1">
+            <Link to="/" onClick={() => setMobileMenuOpen(false)} className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${isActive('/') ? 'text-white bg-dark-600' : 'text-dark-200'}`}>
+              Tasks
+            </Link>
+            <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${isActive('/dashboard') ? 'text-white bg-dark-600' : 'text-dark-200'}`}>
+              Dashboard
+            </Link>
+            {user?.isAdmin && (
+              <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${isActive('/admin') ? 'text-white bg-dark-600' : 'text-dark-200'}`}>
+                Admin Panel
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 };

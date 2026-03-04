@@ -52,14 +52,14 @@ export const LocationTrackingProvider: React.FC<{ children: React.ReactNode }> =
       watchIdRef.current = null;
       setIsTracking(false);
     }
-    
+
     // Cleanup function to stop watching when component unmounts or user changes
     return () => {
-        if (watchIdRef.current !== null) {
-            navigator.geolocation.clearWatch(watchIdRef.current);
-            watchIdRef.current = null;
-            setIsTracking(false);
-        }
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+        setIsTracking(false);
+      }
     };
 
   }, [user, getTasksByMarshal, updateUserLocation]);

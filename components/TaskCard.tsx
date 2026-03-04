@@ -14,75 +14,91 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, isSelected }) => {
   const { user } = useAuth();
   const { acceptTask } = useTasks();
   const [isAccepting, setIsAccepting] = React.useState(false);
-  
+
   const timeAgo = (timestamp: number): string => {
-      const seconds = Math.floor((new Date().getTime() - timestamp) / 1000);
-      let interval = seconds / 31536000;
-      if (interval > 1) return Math.floor(interval) + " years ago";
-      interval = seconds / 2592000;
-      if (interval > 1) return Math.floor(interval) + " months ago";
-      interval = seconds / 86400;
-      if (interval > 1) return Math.floor(interval) + " days ago";
-      interval = seconds / 3600;
-      if (interval > 1) return Math.floor(interval) + " hours ago";
-      interval = seconds / 60;
-      if (interval > 1) return Math.floor(interval) + " minutes ago";
-      return Math.floor(seconds) + " seconds ago";
+    const seconds = Math.floor((new Date().getTime() - timestamp) / 1000);
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + "y ago";
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + "mo ago";
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + "d ago";
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + "h ago";
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + "m ago";
+    return "Just now";
   };
 
   const handleAccept = async () => {
     setIsAccepting(true);
     try {
-        await acceptTask(task.id);
-        // UI will update via context
+      await acceptTask(task.id);
     } catch (error) {
-        console.error("Failed to accept task", error);
-        alert("There was an error accepting the task.");
+      console.error("Failed to accept task", error);
+      alert("There was an error accepting the task.");
     } finally {
-        setIsAccepting(false);
+      setIsAccepting(false);
     }
   };
 
   return (
-    <div id={`task-${task.id}`} className={`bg-white rounded-lg shadow-lg overflow-hidden transform transition-all duration-300 ${isSelected ? 'ring-2 ring-primary scale-105' : 'hover:shadow-xl'}`}>
-      <div className="p-5 flex flex-col h-full">
-        <div className="flex justify-between items-start">
-            <h3 className="text-xl font-bold text-gray-800 flex-1 pr-2">{task.title}</h3>
-            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                task.paymentMethod === PaymentMethod.PREPAID 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-yellow-100 text-yellow-800'
-            }`}>
-                {task.paymentMethod}
+    <div id={`task-${task.id}`}
+      className={`bg-dark-800 rounded-2xl overflow-hidden transition-all duration-300 border ${isSelected
+          ? 'border-primary/50 shadow-lg shadow-primary/10'
+          : 'border-dark-600/50 hover:border-dark-400'
+        }`}
+    >
+      <div className="p-4 flex items-start space-x-4">
+        {/* Left: Price circle */}
+        <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-primary/10 flex flex-col items-center justify-center">
+          <span className="text-xs text-primary font-medium">ZAR</span>
+          <span className="text-lg font-bold text-primary leading-tight">{task.fee.toFixed(0)}</span>
+        </div>
+
+        {/* Middle: Details */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between">
+            <h3 className="text-white font-semibold text-base truncate pr-2">{task.title}</h3>
+            <span className={`flex-shrink-0 px-2 py-0.5 text-[10px] font-semibold rounded-full uppercase tracking-wider ${task.paymentMethod === PaymentMethod.PREPAID
+                ? 'bg-primary/15 text-primary'
+                : 'bg-amber-500/15 text-amber-400'
+              }`}>
+              {task.paymentMethod === PaymentMethod.PREPAID ? 'Paid' : 'Cash'}
             </span>
-        </div>
-        <div className="flex items-start mt-2 text-gray-500 text-sm">
-          <MapPinIcon className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-          <span>{task.location.address}</span>
-        </div>
-        
-        <p className="mt-3 text-gray-600 text-sm flex-grow">
-          {task.description}
-        </p>
+          </div>
 
-        <div className="mt-4 space-y-2 text-sm text-gray-600">
-             <div className="flex items-center">
-                <InformationCircleIcon className="h-4 w-4 mr-2 text-gray-400" />
-                <span>Posted {timeAgo(task.createdAt)}</span>
-            </div>
-            <div className="flex items-center">
-                <ClockIcon className="h-4 w-4 mr-2 text-gray-400" />
-                <span>Est. Duration: {task.duration} hours</span>
-            </div>
-        </div>
+          <div className="flex items-center mt-1.5 text-dark-200 text-xs">
+            <MapPinIcon className="h-3.5 w-3.5 mr-1 flex-shrink-0 text-dark-400" />
+            <span className="truncate">{task.location.address}</span>
+          </div>
 
-        <div className="mt-5 pt-4 border-t border-gray-200 flex items-center justify-between">
-          <p className="text-lg font-bold text-primary">R{task.fee.toFixed(2)}</p>
-          {user?.role === UserRole.MARSHAL && (
-            <button onClick={handleAccept} disabled={isAccepting} className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg shadow-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-75 disabled:bg-gray-400">
-              {isAccepting ? 'Accepting...' : 'Accept Task'}
-            </button>
-          )}
+          <p className="mt-2 text-dark-300 text-xs line-clamp-2 leading-relaxed">
+            {task.description}
+          </p>
+
+          <div className="mt-3 flex items-center justify-between">
+            <div className="flex items-center space-x-3 text-xs text-dark-400">
+              <span className="flex items-center">
+                <ClockIcon className="h-3.5 w-3.5 mr-1" />
+                {task.duration}h
+              </span>
+              <span>•</span>
+              <span>{timeAgo(task.createdAt)}</span>
+            </div>
+
+            {user?.role === UserRole.MARSHAL && (
+              <button onClick={handleAccept} disabled={isAccepting}
+                className="px-5 py-2 bg-primary text-dark-900 text-xs font-bold rounded-xl hover:bg-primary-400 focus:outline-none disabled:opacity-50 transition-all duration-200 shadow-lg shadow-primary/20">
+                {isAccepting ? (
+                  <span className="flex items-center space-x-1">
+                    <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z" /></svg>
+                    <span>...</span>
+                  </span>
+                ) : 'Accept'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

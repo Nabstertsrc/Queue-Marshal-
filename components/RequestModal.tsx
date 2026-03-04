@@ -19,11 +19,11 @@ interface RequestModalProps {
   onClose: () => void;
 }
 
-type Step = 'details' | 'payment_selection' | 'success' | 'error';
+type Step = 'details' | 'payment_selection' | 'processing' | 'success' | 'error';
 
 const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
   const [step, setStep] = useState<Step>('details');
-  const [taskDetails, setTaskDetails] = useState<Partial<Omit<Task, 'id' | 'createdAt' | 'status' | 'requesterId' | 'paymentMethod'>>>({ title: '', description: ''});
+  const [taskDetails, setTaskDetails] = useState<Partial<Omit<Task, 'id' | 'createdAt' | 'status' | 'requesterId' | 'paymentMethod'>>>({ title: '', description: '' });
   const [formError, setFormError] = useState('');
   const [paymentError, setPaymentError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,7 +33,7 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
   const [commission, setCommission] = useState(0);
 
   const { addTask } = useTasks();
-  
+
   const locationInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -62,7 +62,7 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
         });
       }
     };
-    
+
     if (window.google) {
       initializeAutocomplete();
     } else {
@@ -70,7 +70,7 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
     }
 
     return () => {
-        window.removeEventListener('google-maps-api-loaded', initializeAutocomplete);
+      window.removeEventListener('google-maps-api-loaded', initializeAutocomplete);
     };
   }, []);
 
@@ -86,31 +86,31 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
   };
 
   const handleGenerateTitle = async () => {
-      if (!taskDetails.description || isGeneratingTitle) return;
-      setIsGeneratingTitle(true);
-      setFormError('');
-      try {
-          const suggestedTitle = await generateTitleFromDescription(taskDetails.description);
-          setTaskDetails(prev => ({ ...prev, title: suggestedTitle }));
-      } catch (err: any) {
-          setFormError(err.message);
-      } finally {
-          setIsGeneratingTitle(false);
-      }
+    if (!taskDetails.description || isGeneratingTitle) return;
+    setIsGeneratingTitle(true);
+    setFormError('');
+    try {
+      const suggestedTitle = await generateTitleFromDescription(taskDetails.description);
+      setTaskDetails(prev => ({ ...prev, title: suggestedTitle }));
+    } catch (err: any) {
+      setFormError(err.message);
+    } finally {
+      setIsGeneratingTitle(false);
+    }
   };
 
   const handleImproveDescription = async () => {
-      if (!taskDetails.description || isGeneratingDesc) return;
-      setIsGeneratingDesc(true);
-      setFormError('');
-      try {
-          const improvedDesc = await improveTaskDescription(taskDetails.description);
-          setTaskDetails(prev => ({ ...prev, description: improvedDesc }));
-      } catch (err: any) {
-          setFormError(err.message);
-      } finally {
-          setIsGeneratingDesc(false);
-      }
+    if (!taskDetails.description || isGeneratingDesc) return;
+    setIsGeneratingDesc(true);
+    setFormError('');
+    try {
+      const improvedDesc = await improveTaskDescription(taskDetails.description);
+      setTaskDetails(prev => ({ ...prev, description: improvedDesc }));
+    } catch (err: any) {
+      setFormError(err.message);
+    } finally {
+      setIsGeneratingDesc(false);
+    }
   };
 
   const handleYocoPayment = () => {
@@ -118,10 +118,10 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
     setPaymentError('');
 
     if (!window.YocoSDK) {
-        setPaymentError('Yoco payment SDK could not be loaded. Please check your connection and try again.');
-        setStep('error');
-        setLoading(false);
-        return;
+      setPaymentError('Payment service unavailable. Please check your connection.');
+      setStep('error');
+      setLoading(false);
+      return;
     }
 
     const yoco = new window.YocoSDK({
@@ -135,14 +135,10 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
       description: taskDetails.title || 'Task Payment',
       callback: async (result: { id?: string; error?: { message: string } }) => {
         if (result.error) {
-          setPaymentError(result.error.message || 'Yoco payment failed. Please try again.');
+          setPaymentError(result.error.message || 'Payment failed. Please try again.');
           setStep('error');
           setLoading(false);
         } else {
-          // IMPORTANT: In a real-world application, you would send the token `result.id`
-          // to your backend server. The server would then use your SECRET KEY to securely
-          // process the charge. Using a secret key on the frontend is a major security risk.
-          // For this demo, we will simulate a successful payment upon receiving the token.
           await handleSuccessfulPayment(PaymentMethod.PREPAID);
         }
       },
@@ -151,171 +147,255 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
 
   const handleSuccessfulPayment = async (paymentMethod: PaymentMethod) => {
     setLoading(true);
+    setStep('processing');
     try {
-        if (!taskDetails.title || !taskDetails.location || !taskDetails.description || !taskDetails.fee || !taskDetails.duration) {
-          throw new Error("Task details are incomplete.");
-        }
-        const taskToCreate = {
-          title: taskDetails.title,
-          description: taskDetails.description,
-          location: taskDetails.location,
-          fee: taskDetails.fee,
-          duration: taskDetails.duration,
-        };
-        await addTask(taskToCreate, paymentMethod);
-        setStep('success');
-        setTimeout(onClose, 3000);
+      if (!taskDetails.title || !taskDetails.location || !taskDetails.description || !taskDetails.fee || !taskDetails.duration) {
+        throw new Error("Task details are incomplete.");
+      }
+      const taskToCreate = {
+        title: taskDetails.title,
+        description: taskDetails.description,
+        location: taskDetails.location,
+        fee: taskDetails.fee,
+        duration: taskDetails.duration,
+      };
+      await addTask(taskToCreate, paymentMethod);
+      setStep('success');
+      setTimeout(onClose, 3000);
     } catch (err: any) {
-        setPaymentError(err.message || 'Failed to create the task after payment.');
-        setStep('error');
+      setPaymentError(err.message || 'Failed to create the task after payment.');
+      setStep('error');
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
-  
+
+  const inputClasses = "w-full px-4 py-3 bg-dark-700 border border-dark-500 rounded-xl text-white placeholder-dark-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 text-sm";
+
   const renderStep = () => {
     switch (step) {
       case 'details':
         return (
           <form onSubmit={handleDetailsSubmit} className="space-y-4">
-            <h2 className="text-2xl font-bold text-center">Create a New Request</h2>
-            {formError && <p className="text-red-500 text-sm text-center">{formError}</p>}
-            
+            <div className="text-center mb-2">
+              <h2 className="text-xl font-bold text-white">New Request</h2>
+              <p className="text-xs text-dark-300 mt-1">Find a marshal to stand in queue for you</p>
+            </div>
+            {formError && <p className="text-red-400 text-xs text-center bg-red-500/10 rounded-xl py-2 px-3 border border-red-500/20">{formError}</p>}
+
             <div>
-              <div className="flex justify-between items-center mb-1">
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700">Title</label>
-                <button 
-                  type="button" 
-                  onClick={handleGenerateTitle} 
-                  disabled={isGeneratingTitle || !taskDetails.description || taskDetails.description.length < 10}
-                  className="text-xs text-primary hover:text-primary-700 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center transition-colors"
+              <div className="flex justify-between items-center mb-1.5">
+                <label htmlFor="title" className="text-sm font-medium text-dark-100">Title</label>
+                <button
+                  type="button"
+                  onClick={handleGenerateTitle}
+                  disabled={isGeneratingTitle || !taskDetails.description || (taskDetails.description?.length || 0) < 10}
+                  className="text-[11px] text-primary hover:text-primary-300 disabled:text-dark-400 disabled:cursor-not-allowed flex items-center transition-colors"
                 >
                   <SparklesIcon className="mr-1" />
-                  <span>{isGeneratingTitle ? 'Generating...' : 'Suggest from description'}</span>
+                  <span>{isGeneratingTitle ? 'Generating...' : 'AI suggest'}</span>
                 </button>
               </div>
-              <input 
+              <input
                 id="title"
-                type="text" 
-                placeholder="e.g., Stand in line for concert tickets" 
-                required 
+                type="text"
+                placeholder="e.g., Stand in line for concert tickets"
+                required
                 value={taskDetails.title || ''}
-                onChange={e => setTaskDetails({...taskDetails, title: e.target.value})} 
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" 
+                onChange={e => setTaskDetails({ ...taskDetails, title: e.target.value })}
+                className={inputClasses}
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700">Location</label>
-              <input ref={locationInputRef} type="text" placeholder="Search for a place or address" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+              <label className="block text-sm font-medium text-dark-100 mb-1.5">Location</label>
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <input ref={locationInputRef} type="text" placeholder="Search for a place" required className={`${inputClasses} pl-9`} />
+              </div>
             </div>
-            
+
             <div>
-              <div className="flex justify-between items-center mb-1">
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">Task Details</label>
-                 <button 
-                  type="button" 
-                  onClick={handleImproveDescription} 
-                  disabled={isGeneratingDesc || !taskDetails.description || taskDetails.description.length < 10}
-                  className="text-xs text-primary hover:text-primary-700 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center transition-colors"
+              <div className="flex justify-between items-center mb-1.5">
+                <label htmlFor="description" className="text-sm font-medium text-dark-100">Description</label>
+                <button
+                  type="button"
+                  onClick={handleImproveDescription}
+                  disabled={isGeneratingDesc || !taskDetails.description || (taskDetails.description?.length || 0) < 10}
+                  className="text-[11px] text-primary hover:text-primary-300 disabled:text-dark-400 disabled:cursor-not-allowed flex items-center transition-colors"
                 >
                   <SparklesIcon className="mr-1" />
-                  <span>{isGeneratingDesc ? 'Improving...' : 'Improve with AI'}</span>
+                  <span>{isGeneratingDesc ? 'Improving...' : 'AI improve'}</span>
                 </button>
               </div>
-              <textarea id="description" placeholder="Describe the task..." rows={4} required value={taskDetails.description || ''} onChange={e => setTaskDetails({...taskDetails, description: e.target.value})} className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></textarea>
+              <textarea id="description" placeholder="Describe what the marshal needs to do..." rows={3} required value={taskDetails.description || ''} onChange={e => setTaskDetails({ ...taskDetails, description: e.target.value })} className={`${inputClasses} resize-none`}></textarea>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Marshal Fee (R)</label>
-                <input type="number" min="1" step="0.01" placeholder="50.00" required onChange={e => setTaskDetails({...taskDetails, fee: parseFloat(e.target.value)})} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Duration (Hours)</label>
-                <input type="number" min="0.5" step="0.5" placeholder="1" required onChange={e => setTaskDetails({...taskDetails, duration: parseFloat(e.target.value)})} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
-              </div>
-            </div>
-             {taskDetails.fee && taskDetails.fee > 0 && (
-                <div className="p-3 bg-gray-100 rounded-md text-sm">
-                    <div className="flex justify-between">
-                        <span>Marshal Fee:</span>
-                        <span>R {taskDetails.fee.toFixed(2)}</span>
-                    </div>
-                     <div className="flex justify-between">
-                        <span>Service Fee (15%):</span>
-                        <span>R {commission.toFixed(2)}</span>
-                    </div>
-                     <div className="flex justify-between font-bold mt-2 pt-2 border-t">
-                        <span>Total Payment:</span>
-                        <span>R {totalAmount.toFixed(2)}</span>
-                    </div>
+                <label className="block text-sm font-medium text-dark-100 mb-1.5">Fee (ZAR)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-400 text-sm font-medium">R</span>
+                  <input type="number" min="1" step="0.01" placeholder="50" required onChange={e => setTaskDetails({ ...taskDetails, fee: parseFloat(e.target.value) })} className={`${inputClasses} pl-8`} />
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-dark-100 mb-1.5">Duration</label>
+                <div className="relative">
+                  <input type="number" min="0.5" step="0.5" placeholder="1" required onChange={e => setTaskDetails({ ...taskDetails, duration: parseFloat(e.target.value) })} className={`${inputClasses} pr-10`} />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 text-xs">hrs</span>
+                </div>
+              </div>
+            </div>
+
+            {taskDetails.fee && taskDetails.fee > 0 && (
+              <div className="p-4 bg-dark-700/50 rounded-xl border border-dark-500 space-y-2">
+                <div className="flex justify-between text-xs text-dark-200">
+                  <span>Marshal fee</span>
+                  <span>R {taskDetails.fee.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-dark-200">
+                  <span>Service fee (15%)</span>
+                  <span>R {commission.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold text-white pt-2 border-t border-dark-500">
+                  <span>Total</span>
+                  <span className="text-primary">R {totalAmount.toFixed(2)}</span>
+                </div>
+              </div>
             )}
-            <p className="text-xs text-gray-500 text-center">Payments made through the app are subject to a 15% service fee which helps us run the platform and process payments securely.</p>
-            <button type="submit" className="w-full py-2 px-4 bg-primary text-white font-semibold rounded-md shadow-md hover:bg-primary-700">Proceed to Payment</button>
+
+            <button type="submit" className="w-full py-3.5 px-4 bg-primary text-dark-900 font-bold rounded-xl shadow-lg shadow-primary/25 hover:bg-primary-400 transition-all duration-200 text-sm">
+              Continue to Payment
+            </button>
           </form>
         );
+
       case 'payment_selection':
         return (
-          <div className="text-center">
-            <h2 className="text-2xl font-bold">Confirm & Pay</h2>
-            <div className="my-6 p-4 bg-gray-100 rounded-lg text-left">
-                <p><strong>Task:</strong> {taskDetails.title}</p>
-                <p><strong>Location:</strong> {taskDetails.location?.address}</p>
-                <p className="mt-4 text-2xl font-bold text-primary">Total: R {totalAmount.toFixed(2)}</p>
+          <div className="animate-slide-up">
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-bold text-white">Confirm & Pay</h2>
+              <p className="text-xs text-dark-300 mt-1">Review your request and choose payment</p>
             </div>
-             <div className="space-y-3">
-                <p className="text-sm font-medium text-gray-700">Choose a payment method:</p>
-                
-                <button 
-                  onClick={handleYocoPayment} 
-                  disabled={loading} 
-                  className="w-full flex items-center justify-center py-3 px-4 bg-purple-600 text-white font-semibold rounded-md shadow-md hover:bg-purple-700 disabled:bg-purple-400 transition-colors"
-                >
-                    <YocoIcon className="h-5 w-5 mr-3" /> {loading ? 'Processing...' : 'Pay with Card (Yoco)'}
-                </button>
-                
-                <button 
-                  onClick={() => handleSuccessfulPayment(PaymentMethod.ON_THE_SPOT)} 
-                  disabled={loading} 
-                  className="w-full flex items-center justify-center py-3 px-4 bg-gray-600 text-white font-semibold rounded-md shadow-md hover:bg-gray-700 disabled:bg-gray-400 transition-colors"
-                >
-                    <CashIcon className="h-5 w-5 mr-3" /> {loading ? 'Processing...' : 'Pay on the Spot'}
-                </button>
+
+            {/* Task summary card */}
+            <div className="p-4 bg-dark-700/50 rounded-xl border border-dark-500 mb-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-white font-semibold text-sm">{taskDetails.title}</p>
+                  <p className="text-dark-300 text-xs mt-1 flex items-center">
+                    <svg className="w-3 h-3 mr-1 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
+                    {taskDetails.location?.address}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-primary">R{totalAmount.toFixed(2)}</p>
+                  <p className="text-[10px] text-dark-400">inc. service fee</p>
+                </div>
+              </div>
             </div>
-            <button onClick={() => { setStep('details'); setLoading(false); }} className="mt-4 text-sm text-gray-600 hover:underline">Go Back</button>
+
+            {/* Payment methods */}
+            <div className="space-y-3">
+              <p className="text-xs font-medium text-dark-200 uppercase tracking-wider">Payment Method</p>
+
+              <button
+                onClick={handleYocoPayment}
+                disabled={loading}
+                className="w-full flex items-center p-4 bg-dark-700 border border-dark-500 rounded-xl hover:border-primary/50 hover:bg-dark-600 disabled:opacity-50 transition-all duration-200 group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center mr-4">
+                  <YocoIcon className="h-5 w-5 text-purple-400" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-white font-medium text-sm">Pay with Card</p>
+                  <p className="text-dark-400 text-xs">Visa, Mastercard via Yoco</p>
+                </div>
+                <svg className="w-5 h-5 text-dark-400 group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </button>
+
+              <button
+                onClick={() => handleSuccessfulPayment(PaymentMethod.ON_THE_SPOT)}
+                disabled={loading}
+                className="w-full flex items-center p-4 bg-dark-700 border border-dark-500 rounded-xl hover:border-primary/50 hover:bg-dark-600 disabled:opacity-50 transition-all duration-200 group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center mr-4">
+                  <CashIcon className="h-5 w-5 text-amber-400" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-white font-medium text-sm">Pay on the Spot</p>
+                  <p className="text-dark-400 text-xs">Cash payment to marshal</p>
+                </div>
+                <svg className="w-5 h-5 text-dark-400 group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </button>
+            </div>
+
+            <button onClick={() => { setStep('details'); setLoading(false); }} className="w-full mt-4 py-2.5 text-sm text-dark-300 hover:text-white transition-colors">
+              ← Back to details
+            </button>
           </div>
         );
+
+      case 'processing':
+        return (
+          <div className="text-center py-8 animate-fade-in">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+              <svg className="animate-spin h-8 w-8 text-primary" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z" /></svg>
+            </div>
+            <h2 className="text-xl font-bold text-white">Processing Payment</h2>
+            <p className="mt-2 text-dark-300 text-sm">Please wait while we create your request...</p>
+          </div>
+        );
+
       case 'success':
         return (
-          <div className="text-center">
-            <svg className="mx-auto h-12 w-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <h2 className="mt-4 text-2xl font-bold">Task Listed!</h2>
-            <p className="mt-2 text-gray-600">Your task is now available for Marshals. You will be notified when it's accepted.</p>
+          <div className="text-center py-8 animate-scale-in">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/15 mb-4">
+              <svg className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <h2 className="text-xl font-bold text-white">Request Posted!</h2>
+            <p className="mt-2 text-dark-300 text-sm">Your task is now live. You'll be notified when a marshal accepts.</p>
+            <div className="mt-4 flex items-center justify-center space-x-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+              <span className="text-xs text-dark-400">Closing automatically...</span>
+            </div>
           </div>
         );
+
       case 'error':
         return (
-            <div className="text-center">
-                <svg className="mx-auto h-12 w-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <h2 className="mt-4 text-2xl font-bold">An Error Occurred</h2>
-                <p className="mt-2 text-red-600 bg-red-100 p-3 rounded-md">{paymentError || 'An unknown error occurred.'}</p>
-                <p className="mt-2 text-gray-600">Please try a different payment method or check your details.</p>
-                <div className="mt-6 flex justify-center gap-4">
-                  <button onClick={() => setStep('payment_selection')} className="py-2 px-4 bg-gray-200 text-gray-800 font-semibold rounded-md shadow-md hover:bg-gray-300">
-                      Try Again
-                  </button>
-                </div>
+          <div className="text-center py-8 animate-fade-in">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/15 mb-4">
+              <svg className="h-8 w-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </div>
+            <h2 className="text-xl font-bold text-white">Payment Failed</h2>
+            <p className="mt-2 text-red-400 text-sm bg-red-500/10 rounded-xl py-3 px-4 border border-red-500/20">{paymentError || 'An unknown error occurred.'}</p>
+            <p className="mt-3 text-dark-400 text-xs">Try another payment method or check your details.</p>
+            <div className="mt-6 flex justify-center gap-3">
+              <button onClick={() => setStep('payment_selection')} className="px-6 py-2.5 bg-dark-600 text-white text-sm font-medium rounded-xl hover:bg-dark-500 transition-all">
+                Try Again
+              </button>
+            </div>
+          </div>
         );
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] animate-fade-in" onClick={onClose}>
+      <div
+        className="bg-dark-800 rounded-t-3xl sm:rounded-2xl shadow-2xl border border-dark-600/50 p-6 w-full sm:max-w-md relative animate-slide-up max-h-[90vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Drag indicator for mobile */}
+        <div className="sm:hidden flex justify-center mb-4">
+          <div className="w-10 h-1 bg-dark-500 rounded-full"></div>
+        </div>
+
+        {/* Close button */}
+        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-dark-600 hover:bg-dark-500 text-dark-300 hover:text-white transition-all">
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
         {renderStep()}
       </div>

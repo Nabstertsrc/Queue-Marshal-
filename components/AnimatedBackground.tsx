@@ -11,11 +11,9 @@ const AnimatedBackground: React.FC = () => {
         if (!ctx) return;
 
         let animationFrameId: number;
-        
+
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-
-        const primaryColor = '#1877F2'; 
 
         class Particle {
             x: number;
@@ -23,20 +21,22 @@ const AnimatedBackground: React.FC = () => {
             vx: number;
             vy: number;
             radius: number;
+            opacity: number;
 
             constructor() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                this.vx = Math.random() * 0.4 - 0.2;
-                this.vy = Math.random() * 0.4 - 0.2;
-                this.radius = 1.5;
+                this.vx = Math.random() * 0.3 - 0.15;
+                this.vy = Math.random() * 0.3 - 0.15;
+                this.radius = Math.random() * 1.5 + 0.5;
+                this.opacity = Math.random() * 0.5 + 0.1;
             }
 
             draw() {
-                if(!ctx) return;
+                if (!ctx) return;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = primaryColor;
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
                 ctx.fill();
             }
 
@@ -50,18 +50,17 @@ const AnimatedBackground: React.FC = () => {
         }
 
         let particles: Particle[] = [];
-        
+
         function init() {
             particles = [];
-            const particleCount = Math.floor((canvas.width * canvas.height) / 12000);
+            const particleCount = Math.floor((canvas.width * canvas.height) / 18000);
             for (let i = 0; i < particleCount; i++) {
                 particles.push(new Particle());
             }
         }
 
         function connect() {
-            if(!ctx) return;
-            let opacityValue = 1;
+            if (!ctx) return;
             for (let a = 0; a < particles.length; a++) {
                 for (let b = a; b < particles.length; b++) {
                     const distance = Math.sqrt(
@@ -69,9 +68,9 @@ const AnimatedBackground: React.FC = () => {
                         (particles[a].y - particles[b].y) ** 2
                     );
 
-                    if (distance < 120) {
-                        opacityValue = 1 - (distance / 120);
-                        ctx.strokeStyle = `rgba(24, 119, 242, ${opacityValue})`;
+                    if (distance < 100) {
+                        const opacityValue = (1 - (distance / 100)) * 0.15;
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${opacityValue})`;
                         ctx.lineWidth = 0.5;
                         ctx.beginPath();
                         ctx.moveTo(particles[a].x, particles[a].y);
@@ -83,7 +82,7 @@ const AnimatedBackground: React.FC = () => {
         }
 
         function animate() {
-            if(!ctx) return;
+            if (!ctx) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             particles.forEach(p => {
                 p.update();
@@ -94,12 +93,12 @@ const AnimatedBackground: React.FC = () => {
         }
 
         const handleResize = () => {
-            if(!canvas) return;
+            if (!canvas) return;
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             init();
         };
-        
+
         init();
         animate();
 
@@ -111,7 +110,7 @@ const AnimatedBackground: React.FC = () => {
         };
     }, []);
 
-    return <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, zIndex: -1, background: '#F0F2F5' }} />;
+    return <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, zIndex: -1, background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%)' }} />;
 };
 
 export default AnimatedBackground;
