@@ -13,6 +13,12 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
+// Debug: Check if key is correctly reaching the app (masked for security)
+if (import.meta.env.PROD) {
+  const keyPrefix = firebaseConfig.apiKey?.substring(0, 7) || 'NONE';
+  console.log(`Firebase Init Check [PROD]: Key detected (${keyPrefix}...) - PID: ${firebaseConfig.projectId}`);
+}
+
 // Initialize Firebase (only once)
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
