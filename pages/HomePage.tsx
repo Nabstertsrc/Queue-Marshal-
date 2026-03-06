@@ -9,11 +9,53 @@ import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types';
 
 const HomePage: React.FC = () => {
-  const { openTasks } = useTasks();
-  const { user } = useAuth();
+  const { openTasks, addTask } = useTasks();
+  const { user, token } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(true);
+  const [globalLoading, setGlobalLoading] = useState(false);
+
+  React.useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const yocoSuccess = queryParams.get('yoco_task_success');
+    const pendingCheckoutId = sessionStorage.getItem('pendingYocoTaskCheckout');
+    const pendingDetailsStr = sessionStorage.getItem('pendingTaskDetails');
+
+    if (yocoSuccess === 'true' && pendingCheckoutId && pendingDetailsStr && token) {
+      setGlobalLoading(true);
+      const verifyTaskPayment = async () => {
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://queue-marshal-server-production.up.railway.app'}/api/payments/yoco/verify-checkout`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ checkoutId: pendingCheckoutId })
+          });
+
+          const data = await response.json();
+          if (data.success || data.message === 'Payment already processed.') {
+            const taskDetails = JSON.parse(pendingDetailsStr);
+            await addTask(taskDetails, 'prepaid' as any);
+            alert('Payment successful! Your task has been posted.');
+            sessionStorage.removeItem('pendingYocoTaskCheckout');
+            sessionStorage.removeItem('pendingTaskDetails');
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } else {
+            alert("Task Payment verification failed: " + (data.error || 'Unknown error.'));
+          }
+        } catch (error) {
+          alert('Error verifying task payment.');
+        } finally {
+          setGlobalLoading(false);
+        }
+      };
+      verifyTaskPayment();
+    }
+  }, [token, addTask]);
 
   const handleMarkerClick = (taskId: string) => {
     setSelectedTaskId(taskId);

@@ -15,6 +15,8 @@ declare global {
   }
 }
 
+declare const firebase: any;
+
 interface RequestModalProps {
   onClose: () => void;
 }
@@ -113,36 +115,53 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
     }
   };
 
-  const handleYocoPayment = () => {
+  const handleYocoPayment = async () => {
     setLoading(true);
     setPaymentError('');
 
-    if (!window.YocoSDK) {
-      setPaymentError('Payment service unavailable. Please check your connection.');
+    try {
+      const token = await firebase.auth().currentUser.getIdToken();
+      const currentUrl = window.location.href.split('?')[0];
+      const successUrl = `${currentUrl}?yoco_task_success=true`;
+      const cancelUrl = currentUrl;
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://queue-marshal-server-production.up.railway.app'}/api/payments/yoco/create-checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          amountInCents: Math.round(totalAmount * 100),
+          successUrl,
+          cancelUrl
+        })
+      });
+
+      const data = await response.json();
+      if (data.success && data.redirectUrl) {
+        // Save checkout ID and task details to verify when they return
+        sessionStorage.setItem('pendingYocoTaskCheckout', data.checkoutId);
+        sessionStorage.setItem('pendingTaskDetails', JSON.stringify({
+          title: taskDetails.title,
+          description: taskDetails.description,
+          location: taskDetails.location,
+          fee: taskDetails.fee,
+          duration: taskDetails.duration,
+        }));
+
+        // Redirect user to Yoco's hosted payment page
+        window.location.href = data.redirectUrl;
+      } else {
+        setPaymentError("Failed to initiate Yoco payment: " + (data.error || "Unknown error"));
+        setStep('error');
+        setLoading(false);
+      }
+    } catch (error) {
+      setPaymentError("Network error processing payment.");
       setStep('error');
       setLoading(false);
-      return;
     }
-
-    const yoco = new window.YocoSDK({
-      publicKey: 'pk_live_c1f26310jB0W9Oeee414',
-    });
-
-    yoco.showPopup({
-      amountInCents: Math.round(totalAmount * 100),
-      currency: 'ZAR',
-      name: 'Queue-Marshal Task',
-      description: taskDetails.title || 'Task Payment',
-      callback: async (result: { id?: string; error?: { message: string } }) => {
-        if (result.error) {
-          setPaymentError(result.error.message || 'Payment failed. Please try again.');
-          setStep('error');
-          setLoading(false);
-        } else {
-          await handleSuccessfulPayment(PaymentMethod.PREPAID);
-        }
-      },
-    });
   };
 
   const handleSuccessfulPayment = async (paymentMethod: PaymentMethod) => {
