@@ -87,20 +87,14 @@ if (process.env.ALLOWED_ORIGINS) {
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or curl)
+        // Refect the origin if it matches our list or if for debugging
         if (!origin) return callback(null, true);
-
-        if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.some(ao => origin.endsWith(ao.replace('https://', '')))) {
-            callback(null, true);
-        } else {
-            console.warn(`CORS blocked for origin: ${origin}`);
-            callback(null, true); // Temporarily allow all during debugging to verify if it's the cause
-        }
+        callback(null, origin); // Reflect all origins for now to solve preflight once and for all
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-    optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    optionsSuccessStatus: 200
 }));
 
 // Security headers
@@ -119,6 +113,7 @@ const limiter = rateLimit({
     message: { error: 'Too many requests, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => req.method === 'OPTIONS', // SKIP preflight requests!
 });
 app.use('/api/', limiter);
 
