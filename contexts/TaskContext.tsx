@@ -18,23 +18,30 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
-    // Real-time listener for tasks
-    const unsubscribe = db.collection('tasks')
-      .orderBy('createdAt', 'desc')
-      .onSnapshot(
-        (snapshot) => {
-          const taskData = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          })) as Task[];
-          setTasks(taskData);
-        },
-        (error: any) => {
-          console.error('Error subscribing to tasks:', error);
-        }
-      );
+    // Only subscribe if we have an authenticated user
+    const unsubscribeAuth = auth.onAuthStateChanged((user: any) => {
+      if (user) {
+        const unsubscribeTasks = db.collection('tasks')
+          .orderBy('createdAt', 'desc')
+          .onSnapshot(
+            (snapshot: any) => {
+              const taskData = snapshot.docs.map((doc: any) => ({
+                id: doc.id,
+                ...doc.data(),
+              })) as Task[];
+              setTasks(taskData);
+            },
+            (error: any) => {
+              console.error('Error subscribing to tasks:', error);
+            }
+          );
+        return () => unsubscribeTasks();
+      } else {
+        setTasks([]);
+      }
+    });
 
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
 
   const openTasks = tasks.filter((task) => task.status === TaskStatus.OPEN);
