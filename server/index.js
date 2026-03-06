@@ -4,6 +4,8 @@ const admin = require('firebase-admin');
 const crypto = require('crypto');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const axios = require('axios');
+require('dotenv').config();
 
 // --- Firebase Admin SDK Initialization ---
 admin.initializeApp({
@@ -541,7 +543,154 @@ app.get('/api/admin/audit-log', authenticate, requireAdmin, async (req, res) => 
 });
 
 
+// === PAYMENT ROUTES === //
+
+const YOCO_SECRET_KEY = process.env.YOCO_SECRET_KEY;
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
+const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
+
+// 1. YOCO Payment Integration
+app.post('/api/payments/yoco', authenticate, async (req, res) => {
+    try {
+        const { token, amountInCents, currency = 'ZAR' } = req.body;
+        const { uid } = req.user;
+
+        if (!token || !amountInCents) {
+            return res.status(400).json({ error: 'Missing token or amount.' });
+        }
+
+        // Charge the Yoco token
+        const response = await axios.post('https://online.yoco.com/v1/charges/',
+            {
+                token: token,
+                amount: amountInCents,
+                currency: currency
+            },
+            {
+                headers: {
+                    'X-Auth-Secret-Key': YOCO_SECRET_KEY,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        if (response.data.status === 'successful') {
+            // Update user balance in Firestore
+            const amountInRands = amountInCents / 100;
+            const userRef = db.collection('users').doc(uid);
+
+            await db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(userRef);
+                const currentBalance = doc.data().balance || 0;
+                transaction.update(userRef, { balance: currentBalance + amountInRands });
+            });
+
+            // Log completion
+            await db.collection('audit_log').add({
+                action: 'payment_yoco_success',
+                userId: uid,
+                amount: amountInRands,
+                timestamp: Date.now(),
+                yocoId: response.data.id
+            });
+
+            return res.json({ success: true, balanceUpdate: amountInRands });
+        } else {
+            return res.status(400).json({ error: 'Yoco payment failed.', details: response.data });
+        }
+
+    } catch (error) {
+        console.error('Yoco Error:', error.response?.data || error.message);
+        res.status(500).json({ error: 'Payment gateway error.' });
+    }
+});
+
+// 2. PAYPAL Payment Integration
+// Helper to get PayPal access token
+async function getPayPalAccessToken() {
+    const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString('base64');
+    const response = await axios.post('https://api-m.sandbox.paypal.com/v1/oauth2/token', 'grant_type=client_credentials', {
+        headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+    });
+    return response.data.access_token;
+}
+
+app.post('/api/payments/paypal/create-order', authenticate, async (req, res) => {
+    try {
+        const { amount, currency = 'USD' } = req.body;
+        const accessToken = await getPayPalAccessToken();
+
+        const response = await axios.post('https://api-m.sandbox.paypal.com/v2/checkout/orders', {
+            intent: 'CAPTURE',
+            purchase_units: [{
+                amount: {
+                    currency_code: currency,
+                    value: amount.toString()
+                }
+            }]
+        }, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        res.json(response.data);
+    } catch (error) {
+        console.error('PayPal Create Error:', error.response?.data || error.message);
+        res.status(500).json({ error: 'Could not create PayPal order.' });
+    }
+});
+
+app.post('/api/payments/paypal/capture-order', authenticate, async (req, res) => {
+    try {
+        const { orderId } = req.body;
+        const { uid } = req.user;
+        const accessToken = await getPayPalAccessToken();
+
+        const response = await axios.post(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderId}/capture`, {}, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.data.status === 'COMPLETED') {
+            const amount = parseFloat(response.data.purchase_units[0].payments.captures[0].amount.value);
+
+            // Note: If paying in USD, you might want to convert to ZAR here. 
+            // For now, we'll keep it 1:1 or assume system handles multiple currencies.
+            const userRef = db.collection('users').doc(uid);
+            await db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(userRef);
+                const currentBalance = doc.data().balance || 0;
+                transaction.update(userRef, { balance: currentBalance + amount });
+            });
+
+            await db.collection('audit_log').add({
+                action: 'payment_paypal_success',
+                userId: uid,
+                amount: amount,
+                timestamp: Date.now(),
+                paypalId: response.data.id
+            });
+
+            return res.json({ success: true, balanceUpdate: amount });
+        }
+
+        res.status(400).json({ error: 'PayPal capture failed.' });
+    } catch (error) {
+        console.error('PayPal Capture Error:', error.response?.data || error.message);
+        res.status(500).json({ error: 'Could not capture PayPal order.' });
+    }
+});
+
+
 // === ENCRYPTION ENDPOINTS (for sensitive user data) === //
+
 
 // Encrypt sensitive user data on registration
 app.post('/api/secure/encrypt-user-data', authenticate, async (req, res) => {

@@ -196,9 +196,14 @@ const DashboardPage: React.FC = () => {
                         <div className="p-6 bg-gradient-to-br from-primary/15 to-primary/5 rounded-2xl border border-primary/20 mb-6">
                             <p className="text-dark-200 text-xs uppercase tracking-wider">Available Balance</p>
                             <p className="text-4xl font-bold text-white mt-1">R {user.balance.toFixed(2)}</p>
-                            <button className="mt-4 px-5 py-2 bg-primary text-dark-900 text-sm font-semibold rounded-xl hover:bg-primary-400 transition-all shadow-lg shadow-primary/20">
-                                Withdraw Funds
-                            </button>
+                            <div className="flex space-x-3 mt-4">
+                                <Link to="/payment" className="px-5 py-2 bg-primary text-dark-900 text-sm font-semibold rounded-xl hover:bg-primary-400 transition-all shadow-lg shadow-primary/20">
+                                    Top Up Wallet
+                                </Link>
+                                <button className="px-5 py-2 bg-dark-600 text-white text-sm font-semibold rounded-xl hover:bg-dark-500 transition-all">
+                                    Withdraw Funds
+                                </button>
+                            </div>
                         </div>
 
                         <h4 className="text-sm font-medium text-dark-200 uppercase tracking-wider mb-3">Bank Account</h4>

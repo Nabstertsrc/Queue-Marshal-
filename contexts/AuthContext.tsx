@@ -10,11 +10,14 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (authUser: any) => {
       if (authUser) {
+        const idToken = await authUser.getIdToken();
+        setToken(idToken);
         const userDoc = await db.collection('users').doc(authUser.uid).get();
         if (userDoc.exists) {
           const userData = { id: authUser.uid, ...userDoc.data() } as User;
@@ -29,9 +32,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           auth.signOut();
           setUser(null);
+          setToken(null);
         }
       } else {
         setUser(null);
+        setToken(null);
       }
       setLoading(false);
     });
@@ -153,6 +158,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = {
     isAuthenticated: !!user,
     user,
+    token,
     loading,
     login,
     register,
