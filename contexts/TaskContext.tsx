@@ -18,10 +18,18 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
+    let unsubscribeTasks: (() => void) | undefined;
+
     // Only subscribe if we have an authenticated user
     const unsubscribeAuth = auth.onAuthStateChanged((user: any) => {
+      // Clean up previous task subscription if it exists
+      if (unsubscribeTasks) {
+        unsubscribeTasks();
+        unsubscribeTasks = undefined;
+      }
+
       if (user) {
-        const unsubscribeTasks = db.collection('tasks')
+        unsubscribeTasks = db.collection('tasks')
           .orderBy('createdAt', 'desc')
           .onSnapshot(
             (snapshot: any) => {
@@ -35,13 +43,15 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.error('Error subscribing to tasks:', error);
             }
           );
-        return () => unsubscribeTasks();
       } else {
         setTasks([]);
       }
     });
 
-    return () => unsubscribeAuth();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeTasks) unsubscribeTasks();
+    };
   }, []);
 
   const openTasks = tasks.filter((task) => task.status === TaskStatus.OPEN);
@@ -81,13 +91,13 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createdAt: Date.now(),
         status: TaskStatus.OPEN,
         paymentMethod: paymentMethod,
-        marshalId: null,
+        marshalId: undefined, // Fix typing error (was null)
         requesterRated: false,
         marshalRated: false,
       };
 
       const docRef = await db.collection('tasks').add(newTaskPayload);
-      return { id: docRef.id, ...newTaskPayload } as Task;
+      return { id: docRef.id, ...newTaskPayload } as unknown as Task;
     }
   };
 
