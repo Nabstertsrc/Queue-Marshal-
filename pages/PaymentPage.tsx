@@ -32,7 +32,7 @@ const PaymentPage: React.FC = () => {
                 } else {
                     setLoading(true);
                     try {
-                        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/payments/yoco`, {
+                        const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://queue-marshal-server-production.up.railway.app'}/api/payments/yoco`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -140,7 +140,7 @@ const PaymentPage: React.FC = () => {
                                             const details = await actions.order.capture();
                                             setLoading(true);
                                             try {
-                                                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/payments/paypal/capture-order`, {
+                                                const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://queue-marshal-server-production.up.railway.app'}/api/payments/paypal/capture-order`, {
                                                     method: 'POST',
                                                     headers: {
                                                         'Content-Type': 'application/json',

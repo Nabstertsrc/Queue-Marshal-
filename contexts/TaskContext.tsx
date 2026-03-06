@@ -6,7 +6,7 @@ import { TaskStatus, PaymentMethod } from '../types';
 declare const firebase: any;
 
 const TaskContext = createContext<TaskContextType | null>(null);
-const API_URL = (import.meta as any).env?.VITE_API_URL || process.env.REACT_APP_API_URL || '';
+const API_URL = (import.meta as any).env?.VITE_API_URL || process.env.REACT_APP_API_URL || 'https://queue-marshal-server-production.up.railway.app';
 
 const getAuthToken = async (): Promise<string> => {
   const currentUser = firebase.auth().currentUser;

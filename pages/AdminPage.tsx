@@ -47,7 +47,7 @@ const AdminPage: React.FC = () => {
         setProcessingId(marshalId);
         try {
             const token = await firebase.auth().currentUser.getIdToken();
-            const API_URL = (import.meta as any).env?.VITE_API_URL || process.env.REACT_APP_API_URL || '';
+            const API_URL = (import.meta as any).env?.VITE_API_URL || process.env.REACT_APP_API_URL || 'https://queue-marshal-server-production.up.railway.app';
 
             // Try server-side first, fall back to direct Firestore
             try {
@@ -156,15 +156,15 @@ const AdminPage: React.FC = () => {
                                             <div className="relative flex-shrink-0">
                                                 <img className="h-12 w-12 rounded-xl object-cover ring-2 ring-dark-500" src={`https://i.pravatar.cc/150?u=${marshal.id}`} alt="" />
                                                 <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-dark-800 ${status === VerificationStatus.VERIFIED ? 'bg-primary' :
-                                                        status === VerificationStatus.REJECTED ? 'bg-red-500' : 'bg-amber-500'
+                                                    status === VerificationStatus.REJECTED ? 'bg-red-500' : 'bg-amber-500'
                                                     }`}></span>
                                             </div>
                                             <div className="min-w-0">
                                                 <div className="flex items-center space-x-2">
                                                     <p className="text-white font-semibold text-sm truncate">{marshal.name} {marshal.surname}</p>
                                                     <span className={`flex-shrink-0 px-2 py-0.5 text-[10px] font-semibold rounded-full uppercase tracking-wider ${status === VerificationStatus.VERIFIED ? 'bg-primary/15 text-primary' :
-                                                            status === VerificationStatus.REJECTED ? 'bg-red-500/15 text-red-400' :
-                                                                'bg-amber-500/15 text-amber-400'
+                                                        status === VerificationStatus.REJECTED ? 'bg-red-500/15 text-red-400' :
+                                                            'bg-amber-500/15 text-amber-400'
                                                         }`}>
                                                         {status}
                                                     </span>
