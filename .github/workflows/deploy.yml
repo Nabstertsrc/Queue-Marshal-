@@ -19,23 +19,42 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create .env file 📝
+        env:
+          FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
+          API_URL: ${{ secrets.VITE_API_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          YOCO_PUBLIC_KEY: ${{ secrets.VITE_YOCO_PUBLIC_KEY }}
+          YOCO_SECRET_KEY: ${{ secrets.YOCO_SECRET_KEY }}
+          PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
+          PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_CLIENT_SECRET }}
         run: |
-          echo "VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}" > .env
-          echo "VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}" >> .env
-          echo "VITE_FIREBASE_PROJECT_ID=${{ secrets.VITE_FIREBASE_PROJECT_ID }}" >> .env
-          echo "VITE_FIREBASE_STORAGE_BUCKET=${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}" >> .env
-          echo "VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}" >> .env
-          echo "VITE_FIREBASE_APP_ID=${{ secrets.VITE_FIREBASE_APP_ID }}" >> .env
-          echo "VITE_FIREBASE_MEASUREMENT_ID=${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}" >> .env
-          echo "VITE_GOOGLE_MAPS_API_KEY=${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}" >> .env
-          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
-          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+          echo "VITE_FIREBASE_API_KEY=$FIREBASE_API_KEY" > .env
+          echo "VITE_FIREBASE_AUTH_DOMAIN=$FIREBASE_AUTH_DOMAIN" >> .env
+          echo "VITE_FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID" >> .env
+          echo "VITE_FIREBASE_STORAGE_BUCKET=$FIREBASE_STORAGE_BUCKET" >> .env
+          echo "VITE_FIREBASE_MESSAGING_SENDER_ID=$FIREBASE_MESSAGING_SENDER_ID" >> .env
+          echo "VITE_FIREBASE_APP_ID=$FIREBASE_APP_ID" >> .env
+          echo "VITE_FIREBASE_MEASUREMENT_ID=$FIREBASE_MEASUREMENT_ID" >> .env
+          echo "VITE_GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_API_KEY" >> .env
+          echo "VITE_API_URL=$API_URL" >> .env
+          echo "GEMINI_API_KEY=$GEMINI_API_KEY" >> .env
+          echo "VITE_YOCO_PUBLIC_KEY=$YOCO_PUBLIC_KEY" >> .env
+          echo "YOCO_SECRET_KEY=$YOCO_SECRET_KEY" >> .env
+          echo "PAYPAL_CLIENT_ID=$PAYPAL_CLIENT_ID" >> .env
+          echo "PAYPAL_CLIENT_SECRET=$PAYPAL_CLIENT_SECRET" >> .env
 
       - name: CI Diagnostic 🔍
         run: |
           echo "Checking .env file size (should be > 0)..."
           ls -l .env
-          echo "Line count in .env (should be 10):"
+          echo "Line count in .env (should be 14):"
           wc -l .env
 
       - name: Install and Build 🔧
