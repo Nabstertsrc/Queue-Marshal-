@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Map from '../components/Map';
 import TaskCard from '../components/TaskCard';
@@ -6,26 +5,35 @@ import FloatingActionButton from '../components/FloatingActionButton';
 import RequestModal from '../components/RequestModal';
 import { useTasks } from '../contexts/TaskContext';
 import { useAuth } from '../contexts/AuthContext';
-import { UserRole } from '../types';
+import { UserRole, PaymentMethod } from '../types';
+import { useLocation } from 'react-router-dom';
 
 const HomePage: React.FC = () => {
   const { openTasks, addTask } = useTasks();
   const { user, token } = useAuth();
+  const location = useLocation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(true);
   const [globalLoading, setGlobalLoading] = useState(false);
 
   React.useEffect(() => {
-    const queryParams = new URLSearchParams(window.location.search);
+    // Correctly get search params from the hash route using useLocation
+    const queryParams = new URLSearchParams(location.search);
     const yocoSuccess = queryParams.get('yoco_task_success');
     const pendingCheckoutId = sessionStorage.getItem('pendingYocoTaskCheckout');
     const pendingDetailsStr = sessionStorage.getItem('pendingTaskDetails');
+
+    console.log('--- Yoco Return Check ---');
+    console.log('Success param:', yocoSuccess);
+    console.log('Pending Checkout ID:', pendingCheckoutId);
+    console.log('Has Token:', !!token);
 
     if (yocoSuccess === 'true' && pendingCheckoutId && pendingDetailsStr && token) {
       setGlobalLoading(true);
       const verifyTaskPayment = async () => {
         try {
+          console.log('Verifying Yoco Task Payment...');
           const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://queue-marshal-server-production.up.railway.app'}/api/payments/yoco/verify-checkout`, {
             method: 'POST',
             headers: {
@@ -36,9 +44,12 @@ const HomePage: React.FC = () => {
           });
 
           const data = await response.json();
+          console.log('Verify Response:', data);
+
           if (data.success || data.message === 'Payment already processed.') {
             const taskDetails = JSON.parse(pendingDetailsStr);
-            await addTask(taskDetails, 'prepaid' as any);
+            console.log('Posting Task to Database...');
+            await addTask(taskDetails, PaymentMethod.PREPAID);
             alert('Payment successful! Your task has been posted.');
             sessionStorage.removeItem('pendingYocoTaskCheckout');
             sessionStorage.removeItem('pendingTaskDetails');
@@ -48,6 +59,7 @@ const HomePage: React.FC = () => {
             alert("Task Payment verification failed: " + (data.error || 'Unknown error.'));
           }
         } catch (error) {
+          console.error('Yoco Return Error:', error);
           alert('Error verifying task payment.');
         } finally {
           setGlobalLoading(false);
@@ -55,7 +67,7 @@ const HomePage: React.FC = () => {
       };
       verifyTaskPayment();
     }
-  }, [token, addTask]);
+  }, [token, addTask, location.search]);
 
   const handleMarkerClick = (taskId: string) => {
     setSelectedTaskId(taskId);

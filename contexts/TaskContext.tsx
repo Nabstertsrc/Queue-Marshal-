@@ -9,7 +9,7 @@ const TaskContext = createContext<TaskContextType | null>(null);
 const API_URL = (import.meta as any).env?.VITE_API_URL || process.env.REACT_APP_API_URL || 'https://queue-marshal-server-production.up.railway.app';
 
 const getAuthToken = async (): Promise<string> => {
-  const currentUser = firebase.auth().currentUser;
+  const currentUser = auth.currentUser;
   if (!currentUser) throw new Error('Not authenticated.');
   return currentUser.getIdToken();
 };
@@ -61,6 +61,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     paymentMethod: PaymentMethod
   ): Promise<Task> => {
     try {
+      console.log('--- addTask API Attempt ---');
+      console.log('Payment Method:', paymentMethod);
       const token = await getAuthToken();
       const response = await fetch(`${API_URL}/api/tasks`, {
         method: 'POST',
@@ -72,31 +74,34 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ error: 'Unknown server error' }));
         throw new Error(errorData.error || `Server error: ${response.status}`);
       }
 
       const newTask = await response.json();
+      console.log('API Task Creation Success:', newTask.id);
       return newTask as Task;
     } catch (error: any) {
-      console.error('Error adding task via API:', error);
+      console.error('API Task Creation Failed, trying Fallback:', error.message);
 
       // Fallback: create directly in Firestore for development
-      const currentUser = firebase.auth().currentUser;
+      const currentUser = auth.currentUser;
       if (!currentUser) throw new Error('Not authenticated.');
 
+      console.log('--- addTask Firestore Fallback ---');
       const newTaskPayload = {
         ...taskData,
         requesterId: currentUser.uid,
         createdAt: Date.now(),
         status: TaskStatus.OPEN,
         paymentMethod: paymentMethod,
-        marshalId: undefined, // Fix typing error (was null)
+        marshalId: null,
         requesterRated: false,
         marshalRated: false,
       };
 
       const docRef = await db.collection('tasks').add(newTaskPayload);
+      console.log('Fallback Task Creation Success:', docRef.id);
       return { id: docRef.id, ...newTaskPayload } as unknown as Task;
     }
   };

@@ -23,7 +23,10 @@ interface RequestModalProps {
 
 type Step = 'details' | 'payment_selection' | 'processing' | 'success' | 'error';
 
+import { useAuth } from '../contexts/AuthContext';
+
 const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
+  const { user, token } = useAuth();
   const [step, setStep] = useState<Step>('details');
   const [taskDetails, setTaskDetails] = useState<Partial<Omit<Task, 'id' | 'createdAt' | 'status' | 'requesterId' | 'paymentMethod'>>>({ title: '', description: '' });
   const [formError, setFormError] = useState('');
@@ -120,7 +123,9 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
     setPaymentError('');
 
     try {
-      const token = await firebase.auth().currentUser.getIdToken();
+      console.log('Initiating Yoco Checkout Request...');
+      if (!token) throw new Error('Authentication token is missing.');
+
       const currentUrl = window.location.href.split('?')[0];
       const successUrl = `${currentUrl}?yoco_task_success=true`;
       const cancelUrl = currentUrl;
@@ -139,6 +144,7 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
       });
 
       const data = await response.json();
+      console.log('Checkout API Response:', data);
       if (data.success && data.redirectUrl) {
         // Save checkout ID and task details to verify when they return
         sessionStorage.setItem('pendingYocoTaskCheckout', data.checkoutId);
@@ -157,8 +163,9 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
         setStep('error');
         setLoading(false);
       }
-    } catch (error) {
-      setPaymentError("Network error processing payment.");
+    } catch (error: any) {
+      console.error('Yoco Checkout Error:', error);
+      setPaymentError(error.message || "Network error processing payment.");
       setStep('error');
       setLoading(false);
     }
@@ -168,21 +175,35 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
     setLoading(true);
     setStep('processing');
     try {
+      console.log('--- handleSuccessfulPayment ---');
+      console.log('Method:', paymentMethod);
+
       if (!taskDetails.title || !taskDetails.location || !taskDetails.description || !taskDetails.fee || !taskDetails.duration) {
-        throw new Error("Task details are incomplete.");
+        throw new Error("Task details are incomplete. Please go back and fill all fields.");
       }
+
       const taskToCreate = {
         title: taskDetails.title,
         description: taskDetails.description,
-        location: taskDetails.location,
+        location: taskDetails.location as any,
         fee: taskDetails.fee,
         duration: taskDetails.duration,
       };
-      await addTask(taskToCreate, paymentMethod);
+
+      console.log('Sending addTask request...');
+      const createdTask = await addTask(taskToCreate, paymentMethod);
+      console.log('Task created successfully:', createdTask.id);
+
       setStep('success');
-      setTimeout(onClose, 3000);
+      setTimeout(() => {
+        onClose();
+        // Clear potential pending data
+        sessionStorage.removeItem('pendingYocoTaskCheckout');
+        sessionStorage.removeItem('pendingTaskDetails');
+      }, 3000);
     } catch (err: any) {
-      setPaymentError(err.message || 'Failed to create the task after payment.');
+      console.error('Error in handleSuccessfulPayment:', err);
+      setPaymentError(err.message || 'Failed to create the task. Please try again.');
       setStep('error');
     } finally {
       setLoading(false);
