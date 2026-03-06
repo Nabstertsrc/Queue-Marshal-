@@ -616,8 +616,12 @@ app.post('/api/payments/yoco/create-checkout', authenticate, async (req, res) =>
             return res.status(400).json({ error: 'Failed to create Yoco checkout.', details: response.data });
         }
     } catch (error) {
-        console.error('Yoco Create Checkout Error:', error.response?.data || error.message);
-        res.status(500).json({ error: 'Payment gateway error.' });
+        console.error('Yoco API Error:', error.response?.data || error.message);
+        const errorMessage = error.response?.data?.displayMessage || error.response?.data?.message || 'Payment gateway error.';
+        res.status(error.response?.status || 500).json({
+            error: errorMessage,
+            details: error.response?.data || error.message
+        });
     }
 });
 
