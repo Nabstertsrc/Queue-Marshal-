@@ -21,15 +21,14 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
             credential: admin.credential.cert(serviceAccount)
         });
     } catch (e) {
-        console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT env var:", e.message);
-        admin.initializeApp({
-            credential: admin.credential.applicationDefault()
-        });
+        console.error("❌ CRITICAL ERROR: Failed to parse FIREBASE_SERVICE_ACCOUNT variable. Please ensure you copied the entire JSON file perfectly.");
+        console.error("Details:", e.message);
+        process.exit(1); // Crash immediately with clear error
     }
 } else {
-    admin.initializeApp({
-        credential: admin.credential.applicationDefault()
-    });
+    console.error("❌ CRITICAL ERROR: FIREBASE_SERVICE_ACCOUNT environment variable is MISSING in Railway.");
+    console.error("Please add the entire JSON file text as the FIREBASE_SERVICE_ACCOUNT variable.");
+    process.exit(1); // Crash immediately with clear error
 }
 
 const db = admin.firestore();
