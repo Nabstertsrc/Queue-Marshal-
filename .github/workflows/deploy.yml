@@ -20,38 +20,50 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create .env file 📝
-        env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-          VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
-          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          VITE_YOCO_PUBLIC_KEY: ${{ secrets.VITE_YOCO_PUBLIC_KEY }}
-          YOCO_SECRET_KEY: ${{ secrets.YOCO_SECRET_KEY }}
-          PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
-          PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_CLIENT_SECRET }}
         run: |
-          # Create .env and clean values that might have been pasted as KEY=VALUE
-          for var in $(env | grep -E '^(VITE_|GEMINI_|YOCO_|PAYPAL_)'); do
-            name=$(echo "$var" | cut -d'=' -f1)
-            # Take everything after the first '=', then check if it contains another '='
-            val=$(echo "$var" | cut -d'=' -f2-)
-            if [[ "$val" == *"$name="* ]]; then
-              val=$(echo "$val" | sed "s/^$name=//")
+          # Create an empty .env file
+          touch .env
+          
+          # Function to add to .env if value exists
+          add_env() {
+            local name=$1
+            local secret_val="${2}"
+            local var_val="${3}"
+            
+            # Use secret first, then var
+            local val="${secret_val:-$var_val}"
+            
+            if [ -n "$val" ]; then
+              # Clean any accidental "KEY=" prefix if user pasted the whole line
+              if [[ "$val" == *"$name="* ]]; then
+                val=$(echo "$val" | sed "s/^$name=//")
+              fi
+              echo "$name=$val" >> .env
+              echo "✅ Added $name"
+            else
+              echo "⚠️ Missing $name (Skipped)"
             fi
-            echo "$name=$val" >> .env
-          done
+          }
+
+          # Map every required variable
+          add_env "VITE_FIREBASE_API_KEY" "${{ secrets.VITE_FIREBASE_API_KEY }}" "${{ vars.VITE_FIREBASE_API_KEY }}"
+          add_env "VITE_FIREBASE_AUTH_DOMAIN" "${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}" "${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}"
+          add_env "VITE_FIREBASE_PROJECT_ID" "${{ secrets.VITE_FIREBASE_PROJECT_ID }}" "${{ vars.VITE_FIREBASE_PROJECT_ID }}"
+          add_env "VITE_FIREBASE_STORAGE_BUCKET" "${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}" "${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}"
+          add_env "VITE_FIREBASE_MESSAGING_SENDER_ID" "${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}" "${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}"
+          add_env "VITE_FIREBASE_APP_ID" "${{ secrets.VITE_FIREBASE_APP_ID }}" "${{ vars.VITE_FIREBASE_APP_ID }}"
+          add_env "VITE_FIREBASE_MEASUREMENT_ID" "${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}" "${{ vars.VITE_FIREBASE_MEASUREMENT_ID }}"
+          add_env "VITE_GOOGLE_MAPS_API_KEY" "${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}" "${{ vars.VITE_GOOGLE_MAPS_API_KEY }}"
+          add_env "VITE_API_URL" "${{ secrets.VITE_API_URL }}" "${{ vars.VITE_API_URL }}"
+          add_env "GEMINI_API_KEY" "${{ secrets.GEMINI_API_KEY }}" "${{ vars.GEMINI_API_KEY }}"
+          add_env "VITE_YOCO_PUBLIC_KEY" "${{ secrets.VITE_YOCO_PUBLIC_KEY }}" "${{ vars.VITE_YOCO_PUBLIC_KEY }}"
+          add_env "YOCO_SECRET_KEY" "${{ secrets.YOCO_SECRET_KEY }}" "${{ vars.YOCO_SECRET_KEY }}"
+          add_env "PAYPAL_CLIENT_ID" "${{ secrets.PAYPAL_CLIENT_ID }}" "${{ vars.PAYPAL_CLIENT_ID }}"
+          add_env "PAYPAL_CLIENT_SECRET" "${{ secrets.PAYPAL_CLIENT_SECRET }}" "${{ vars.PAYPAL_CLIENT_SECRET }}"
 
       - name: CI Diagnostic 🔍
         run: |
-          echo "Checking .env file structure..."
-          ls -l .env
-          echo "Line count (target 14+):"
+          echo "Final .env line count:"
           wc -l .env
           echo "Verifying Project ID (Masked):"
           grep VITE_FIREBASE_PROJECT_ID .env | cut -d'=' -f2 | sed 's/./*/g'
