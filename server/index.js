@@ -8,9 +8,23 @@ const axios = require('axios');
 require('dotenv').config();
 
 // --- Firebase Admin SDK Initialization ---
-admin.initializeApp({
-    credential: admin.credential.applicationDefault()
-});
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+    } catch (e) {
+        console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT env var:", e.message);
+        admin.initializeApp({
+            credential: admin.credential.applicationDefault()
+        });
+    }
+} else {
+    admin.initializeApp({
+        credential: admin.credential.applicationDefault()
+    });
+}
 
 const db = admin.firestore();
 
