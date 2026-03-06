@@ -36,21 +36,25 @@ jobs:
           PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
           PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_CLIENT_SECRET }}
         run: |
-          # Robust way to create .env without duplications
+          # Create .env and clean values that might have been pasted as KEY=VALUE
           for var in $(env | grep -E '^(VITE_|GEMINI_|YOCO_|PAYPAL_)'); do
-            # If the value contains another "VITE_...", strip it
-            key=$(echo "$var" | cut -d'=' -f1)
-            value=$(echo "$var" | cut -d'=' -f2-)
-            clean_value=$(echo "$value" | sed "s/^$key=//")
-            echo "$key=$clean_value" >> .env
+            name=$(echo "$var" | cut -d'=' -f1)
+            # Take everything after the first '=', then check if it contains another '='
+            val=$(echo "$var" | cut -d'=' -f2-)
+            if [[ "$val" == *"$name="* ]]; then
+              val=$(echo "$val" | sed "s/^$name=//")
+            fi
+            echo "$name=$val" >> .env
           done
 
       - name: CI Diagnostic 🔍
         run: |
-          echo "Checking .env file size (should be > 0)..."
+          echo "Checking .env file structure..."
           ls -l .env
-          echo "Line count in .env (should be 14):"
+          echo "Line count (target 14+):"
           wc -l .env
+          echo "Verifying Project ID (Masked):"
+          grep VITE_FIREBASE_PROJECT_ID .env | cut -d'=' -f2 | sed 's/./*/g'
 
       - name: Install and Build 🔧
         run: |
