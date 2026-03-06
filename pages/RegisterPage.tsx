@@ -34,7 +34,7 @@ const RegisterPage: React.FC = () => {
             },
             (err) => {
                 console.warn(`Geolocation ERROR(${err.code}): ${err.message}`);
-                setError('Could not get your location. Please enable location services.');
+                // Location is optional during registration, so we suppress this error in the UI
             },
             { timeout: 10000 }
         );
@@ -163,7 +163,7 @@ const RegisterPage: React.FC = () => {
                                 </div>
                             </div>
 
-                            <button type="submit" disabled={loading || !location}
+                            <button type="submit" disabled={loading}
                                 className="w-full py-3.5 px-4 bg-primary text-dark-900 font-semibold rounded-xl shadow-lg shadow-primary/25 hover:bg-primary-400 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm mt-2">
                                 {loading ? (
                                     <span className="flex items-center justify-center space-x-2">
