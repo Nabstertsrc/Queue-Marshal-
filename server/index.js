@@ -568,52 +568,77 @@ const YOCO_SECRET_KEY = process.env.YOCO_SECRET_KEY;
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
 
-// 1. YOCO Payment Integration
-app.post('/api/payments/yoco', authenticate, async (req, res) => {
+// 1. YOCO Payment Integration (New API)
+app.post('/api/payments/yoco/create-checkout', authenticate, async (req, res) => {
     try {
-        const { token, amountInCents, currency = 'ZAR' } = req.body;
+        const { amountInCents, currency = 'ZAR', successUrl, cancelUrl } = req.body;
         const { uid } = req.user;
 
-        if (!token || !amountInCents) {
-            return res.status(400).json({ error: 'Missing token or amount.' });
+        if (!amountInCents) {
+            return res.status(400).json({ error: 'Missing amount.' });
         }
 
-        // Charge the Yoco token
-        let response;
-        try {
-            response = await axios.post('https://online.yoco.com/v1/charges/',
-                {
-                    token: token,
-                    amount: amountInCents,
-                    currency: currency
-                },
-                {
-                    headers: {
-                        'X-Auth-Secret-Key': YOCO_SECRET_KEY,
-                        'Content-Type': 'application/json'
-                    }
+        const response = await axios.post('https://payments.yoco.com/api/checkouts',
+            {
+                amount: amountInCents,
+                currency,
+                successUrl: successUrl || 'https://profilegenius.fun/#/payment?yoco_success=true',
+                cancelUrl: cancelUrl || 'https://profilegenius.fun/#/payment',
+                metadata: { userId: uid }
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${YOCO_SECRET_KEY}`,
+                    'Content-Type': 'application/json'
                 }
-            );
-        } catch (apiError) {
-            // Yoco depreciated v1/charges API recently
-            if (apiError.response?.data?.message?.includes('sunsetted') || apiError.response?.status === 404) {
-                console.warn("⚠️ YOCO API V1 IS SUNSETTED. Simulating success for development purposes.");
-
-                // --- SIMULATED SUCCESS FOR TESTING ---
-                response = {
-                    data: {
-                        status: 'successful',
-                        id: 'mock_yoco_' + Date.now()
-                    }
-                };
-            } else {
-                throw apiError; // Throw legitimate errors
             }
+        );
+
+        if (response.data && response.data.redirectUrl) {
+            return res.json({
+                success: true,
+                redirectUrl: response.data.redirectUrl,
+                checkoutId: response.data.id
+            });
+        } else {
+            return res.status(400).json({ error: 'Failed to create Yoco checkout.', details: response.data });
+        }
+    } catch (error) {
+        console.error('Yoco Create Checkout Error:', error.response?.data || error.message);
+        res.status(500).json({ error: 'Payment gateway error.' });
+    }
+});
+
+app.post('/api/payments/yoco/verify-checkout', authenticate, async (req, res) => {
+    try {
+        const { checkoutId } = req.body;
+        const { uid } = req.user;
+
+        if (!checkoutId) {
+            return res.status(400).json({ error: 'Missing checkout ID.' });
         }
 
-        if (response.data.status === 'successful') {
-            // Update user balance in Firestore
-            const amountInRands = amountInCents / 100;
+        // Verify the checkout status with Yoco
+        const response = await axios.get(`https://payments.yoco.com/api/checkouts/${checkoutId}`, {
+            headers: {
+                'Authorization': `Bearer ${YOCO_SECRET_KEY}`
+            }
+        });
+
+        const checkoutData = response.data;
+
+        if (checkoutData.status === 'paid') {
+            // Check if already processed
+            const auditSnapshot = await db.collection('audit_log')
+                .where('yocoId', '==', checkoutId)
+                .where('action', '==', 'payment_yoco_success')
+                .get();
+
+            if (!auditSnapshot.empty) {
+                return res.json({ success: true, message: 'Payment already processed.' });
+            }
+
+            const amountInRands = checkoutData.amount / 100;
             const userRef = db.collection('users').doc(uid);
 
             await db.runTransaction(async (transaction) => {
@@ -628,17 +653,16 @@ app.post('/api/payments/yoco', authenticate, async (req, res) => {
                 userId: uid,
                 amount: amountInRands,
                 timestamp: Date.now(),
-                yocoId: response.data.id
+                yocoId: checkoutId
             });
 
             return res.json({ success: true, balanceUpdate: amountInRands });
         } else {
-            return res.status(400).json({ error: 'Yoco payment failed.', details: response.data });
+            return res.status(400).json({ error: 'Yoco payment not successful or pending.', status: checkoutData.status });
         }
-
     } catch (error) {
-        console.error('Yoco Error:', error.response?.data || error.message);
-        res.status(500).json({ error: 'Payment gateway error.' });
+        console.error('Yoco Verify Error:', error.response?.data || error.message);
+        res.status(500).json({ error: 'Failed to verify payment.' });
     }
 });
 

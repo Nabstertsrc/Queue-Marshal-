@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 
@@ -11,54 +11,83 @@ const PaymentPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    const handleYocoPayment = () => {
-        if (!window.YocoSDK) {
-            alert("Yoco SDK not loaded. Please refresh.");
-            return;
-        }
+    const location = useLocation();
 
-        const yoco = new YocoSDK({
-            publicKey: import.meta.env.VITE_YOCO_PUBLIC_KEY || 'pk_test_ed3c84a6w7mo6nyjr6k3', // Default test key
-        });
+    React.useEffect(() => {
+        const queryParams = new URLSearchParams(location.search);
+        const yocoSuccess = queryParams.get('yoco_success');
+        const pendingCheckoutId = sessionStorage.getItem('pendingYocoCheckout');
 
-        yoco.showPopup({
-            amountInCents: amount * 100,
-            currency: 'ZAR',
-            name: 'Queue-Marshal Top-up',
-            description: `Recharge wallet with R${amount}`,
-            callback: async (result: any) => {
-                if (result.error) {
-                    alert("Payment failed: " + result.error.message);
-                } else {
-                    setLoading(true);
-                    try {
-                        const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://queue-marshal-server-production.up.railway.app'}/api/payments/yoco`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                            },
-                            body: JSON.stringify({
-                                token: result.id,
-                                amountInCents: amount * 100
-                            })
-                        });
+        if (yocoSuccess === 'true' && pendingCheckoutId && token) {
+            setLoading(true);
+            const verifyPayment = async () => {
+                try {
+                    const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://queue-marshal-server-production.up.railway.app'}/api/payments/yoco/verify-checkout`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ checkoutId: pendingCheckoutId })
+                    });
 
-                        const data = await response.json();
-                        if (data.success) {
-                            alert(`Successful! R${amount} added to your wallet.`);
+                    const data = await response.json();
+                    if (data.success) {
+                        alert(`Successful! Funds added to your wallet.`);
+                        sessionStorage.removeItem('pendingYocoCheckout');
+                        navigate('/dashboard');
+                    } else {
+                        if (data.message === 'Payment already processed.') {
+                            sessionStorage.removeItem('pendingYocoCheckout');
                             navigate('/dashboard');
                         } else {
-                            alert("Server error: " + data.error);
+                            alert("Payment verification failed: " + (data.error || 'Unknown error.'));
                         }
-                    } catch (error) {
-                        alert("Network error processing payment.");
-                    } finally {
-                        setLoading(false);
                     }
+                } catch (error) {
+                    alert('Error verifying payment.');
+                } finally {
+                    setLoading(false);
                 }
+            };
+            verifyPayment();
+        }
+    }, [location.search, token, navigate]);
+
+    const handleYocoPayment = async () => {
+        setLoading(true);
+        try {
+            const currentUrl = window.location.href.split('?')[0];
+            const successUrl = `${currentUrl}?yoco_success=true`;
+            const cancelUrl = currentUrl;
+
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://queue-marshal-server-production.up.railway.app'}/api/payments/yoco/create-checkout`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    amountInCents: amount * 100,
+                    successUrl,
+                    cancelUrl
+                })
+            });
+
+            const data = await response.json();
+            if (data.success && data.redirectUrl) {
+                // Save checkout ID to verify when they return
+                sessionStorage.setItem('pendingYocoCheckout', data.checkoutId);
+                // Redirect user to Yoco's hosted payment page
+                window.location.href = data.redirectUrl;
+            } else {
+                alert("Failed to initiate Yoco payment: " + (data.error || "Unknown error"));
+                setLoading(false);
             }
-        });
+        } catch (error) {
+            alert("Network error processing payment.");
+            setLoading(false);
+        }
     };
 
     if (!user) return null;
