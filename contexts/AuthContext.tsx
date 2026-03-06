@@ -106,11 +106,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: userData.email,
         idNumber: userData.idNumber,
         role: userData.role,
-        location: userData.location,
         balance: 0,
         verificationStatus: userData.role === UserRole.MARSHAL ? VerificationStatus.PENDING : VerificationStatus.VERIFIED,
         isAdmin: isAdminEmail,
       };
+
+      if (userData.location) {
+        userToStore.location = userData.location;
+      }
 
       await db.collection('users').doc(authUser.uid).set(userToStore);
       await auth.signOut();
