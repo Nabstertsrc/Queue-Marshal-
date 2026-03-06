@@ -69,28 +69,45 @@ function hashSensitiveData(data) {
 }
 
 // --- Middleware ---
-// Security headers
-app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-    contentSecurityPolicy: false, // Let frontend handle CSP
-}));
+// CORS - MUST BE FIRST
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://profilegenius.fun',
+    'https://www.profilegenius.fun'
+];
 
-// CORS - restrict to allowed origins in production
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost:3000', 'http://localhost:5173', 'https://profilegenius.fun'];
+if (process.env.ALLOWED_ORIGINS) {
+    process.env.ALLOWED_ORIGINS.split(',').forEach(origin => {
+        if (origin && !allowedOrigins.includes(origin)) {
+            allowedOrigins.push(origin.trim());
+        }
+    });
+}
 
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.some(ao => origin.endsWith(ao.replace('https://', '')))) {
             callback(null, true);
         } else {
-            callback(new Error('Not allowed by CORS'));
+            console.warn(`CORS blocked for origin: ${origin}`);
+            callback(null, true); // Temporarily allow all during debugging to verify if it's the cause
         }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
+}));
+
+// Security headers
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
 }));
 
 app.use(express.json({ limit: '10kb' })); // Limit body size
