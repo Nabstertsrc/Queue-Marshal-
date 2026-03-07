@@ -80,8 +80,8 @@ const Map: React.FC<MapProps> = ({ tasks, onMarkerClick, selectedTaskId }) => {
                     const newMap = new window.google.maps.Map(ref.current, {
                         center: { lat: -26.2041, lng: 28.0473 },
                         zoom: 11,
-                        styles: darkMapStyles,
-                        mapId: 'DEMO_MAP_ID', // Required for Advanced Markers
+                        styles: darkMapStyles, // Keep local styles
+                        // mapId: 'DEMO_MAP_ID', // REMOVED to prioritize local darkMapStyles
                         disableDefaultUI: true,
                         zoomControl: true,
                         zoomControlOptions: {
@@ -120,7 +120,7 @@ const Map: React.FC<MapProps> = ({ tasks, onMarkerClick, selectedTaskId }) => {
         if (map && window.google) {
             // Remove old markers
             Object.values(markers).forEach((marker: any) => {
-                marker.map = null;
+                marker.setMap(null);
             });
 
             const newMarkers: { [key: string]: any } = {};
@@ -129,14 +129,17 @@ const Map: React.FC<MapProps> = ({ tasks, onMarkerClick, selectedTaskId }) => {
 
             tasks.forEach(task => {
                 const isSelected = selectedTaskId === task.id;
-                const container = document.createElement('div');
-                container.innerHTML = createCustomMarkerSvg(task.fee, isSelected);
 
-                const marker = new window.google.maps.marker.AdvancedMarkerElement({
+                // Use standard Marker with custom Icon (SVG) to support local darkMapStyles
+                const marker = new window.google.maps.Marker({
                     position: task.location,
                     map: map,
                     title: task.title,
-                    content: container,
+                    icon: {
+                        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(createCustomMarkerSvg(task.fee, isSelected))}`,
+                        scaledSize: new window.google.maps.Size(40, 48),
+                        anchor: new window.google.maps.Point(20, 48)
+                    }
                 });
 
                 marker.addListener('click', () => {

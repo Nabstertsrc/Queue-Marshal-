@@ -24,10 +24,12 @@ const HomePage: React.FC = () => {
     const pendingCheckoutId = sessionStorage.getItem('pendingYocoTaskCheckout');
     const pendingDetailsStr = sessionStorage.getItem('pendingTaskDetails');
 
-    console.log('--- Yoco Return Check ---');
-    console.log('Success param:', yocoSuccess);
-    console.log('Pending Checkout ID:', pendingCheckoutId);
-    console.log('Has Token:', !!token);
+    if (yocoSuccess) {
+      console.log('--- Yoco Return Check ---');
+      console.log('Success param:', yocoSuccess);
+      console.log('Pending Checkout ID:', pendingCheckoutId);
+      console.log('Has Token:', !!token);
+    }
 
     if (yocoSuccess === 'true' && pendingCheckoutId && pendingDetailsStr && token) {
       setGlobalLoading(true);
