@@ -13,6 +13,7 @@ import PaymentPage from './pages/PaymentPage';
 import MessagesPage from './pages/MessagesPage';
 import SplashScreen from './components/SplashScreen';
 import Header from './components/Header';
+import PushNotificationManager from './components/PushNotificationManager';
 
 const App: React.FC = () => {
   return (
@@ -40,6 +41,7 @@ const Main: React.FC = () => {
   return (
     <div className={`flex flex-col h-screen ${isAuthPage ? 'bg-transparent' : 'bg-dark-900'}`}>
       {isAuthenticated && <Header />}
+      {isAuthenticated && <PushNotificationManager />}
       <Routes>
         <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/" />} />
         <Route path="/register" element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/" />} />

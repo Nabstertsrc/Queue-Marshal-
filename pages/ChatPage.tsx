@@ -63,15 +63,15 @@ const ChatPage: React.FC = () => {
                 const messagesQuery = db.collection('chats').doc(taskId).collection('messages').orderBy('timestamp', 'asc');
 
                 unsubscribeFromMessages = messagesQuery.onSnapshot(
-                    (snapshot) => {
+                    (snapshot: any) => {
                         if (isMounted) {
-                            const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChatMessage));
+                            const msgs = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as ChatMessage));
                             setMessages(msgs);
                             setError('');
                             setLoading(false);
                         }
                     },
-                    (err) => {
+                    (err: any) => {
                         console.error("Chat snapshot listener error:", err);
                         if (isMounted) {
                             setError("Connection lost. Please refresh.");
@@ -117,6 +117,29 @@ const ChatPage: React.FC = () => {
 
         try {
             await db.collection('chats').doc(taskId).collection('messages').add(messageData);
+
+            // Notify the other party via push notification
+            if (task) {
+                const recipientId = user.id === task.requesterId ? task.marshalId : task.requesterId;
+                if (recipientId) {
+                    const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://queue-marshal-server-production.up.railway.app';
+                    const token = await firebase.auth().currentUser.getIdToken();
+
+                    fetch(`${API_URL}/api/notifications/chat`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            taskId,
+                            recipientId,
+                            messageSnippet: newMessage.substring(0, 100)
+                        })
+                    }).catch(err => console.error("Error triggering push notification:", err));
+                }
+            }
+
             setNewMessage('');
         } catch (err) {
             console.error("Error sending message:", err);

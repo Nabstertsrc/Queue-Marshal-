@@ -68,6 +68,40 @@ function hashSensitiveData(data) {
     return crypto.createHash('sha256').update(data).digest('hex');
 }
 
+// --- Push Notification Helper ---
+async function sendPushNotification(userId, title, body, data = {}) {
+    try {
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (!userDoc.exists) return;
+
+        const userData = userDoc.data();
+        const fcmToken = userData.fcmToken;
+
+        if (!fcmToken) {
+            console.log(`No FCM token for user ${userId}, skipping notification.`);
+            return;
+        }
+
+        const message = {
+            notification: {
+                title,
+                body,
+            },
+            data: {
+                ...data,
+                click_action: 'FLUTTER_NOTIFICATION_CLICK', // For some older SDKs
+            },
+            token: fcmToken,
+        };
+
+        const response = await admin.messaging().send(message);
+        console.log('Successfully sent message:', response);
+        return response;
+    } catch (error) {
+        console.error('Error sending push notification:', error);
+    }
+}
+
 // --- Middleware ---
 // CORS - MUST BE FIRST
 const allowedOrigins = [
@@ -293,6 +327,18 @@ app.post('/api/tasks/:taskId/accept', authenticate, async (req, res) => {
             });
         });
 
+        // Notify the requester that their task was accepted
+        const taskDoc = await taskRef.get();
+        const taskData = taskDoc.data();
+        if (taskData.requesterId) {
+            sendPushNotification(
+                taskData.requesterId,
+                'Task Accepted! 🚀',
+                `A Marshal has accepted your task: "${taskData.title}".`,
+                { taskId, type: 'task_accepted' }
+            );
+        }
+
         // Audit log
         await db.collection('audit_log').add({
             action: 'task_accepted',
@@ -358,6 +404,18 @@ app.post('/api/tasks/:taskId/complete', authenticate, async (req, res) => {
 
             transaction.update(taskRef, { status: 'Completed' });
         });
+
+        // Notify the requester that their task was completed
+        const taskDoc = await taskRef.get();
+        const taskData = taskDoc.data();
+        if (taskData.requesterId) {
+            sendPushNotification(
+                taskData.requesterId,
+                'Task Completed! ✅',
+                `Your task "${taskData.title}" has been completed by the Marshal.`,
+                { taskId, type: 'task_completed' }
+            );
+        }
 
         // Audit
         await db.collection('audit_log').add({
@@ -789,6 +847,36 @@ app.post('/api/secure/encrypt-user-data', authenticate, async (req, res) => {
         res.json({ success: true, message: 'Sensitive data encrypted and stored.' });
     } catch (error) {
         console.error('Error encrypting user data:', error);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+
+// --- NOTIFICATION ROUTES --- //
+
+// Endpoint for client to trigger a chat notification
+app.post('/api/notifications/chat', authenticate, async (req, res) => {
+    try {
+        const { taskId, recipientId, messageSnippet } = req.body;
+        const senderName = req.user.name || 'User';
+
+        if (!taskId || !recipientId || !messageSnippet) {
+            return res.status(400).json({ error: 'Missing required fields for chat notification.' });
+        }
+
+        const taskDoc = await db.collection('tasks').doc(taskId).get();
+        const taskTitle = taskDoc.exists ? taskDoc.data().title : 'Task Chat';
+
+        await sendPushNotification(
+            recipientId,
+            `New message from ${senderName}`,
+            `[${taskTitle}] ${messageSnippet}`,
+            { taskId, type: 'chat_message' }
+        );
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error sending chat notification route:', error);
         res.status(500).json({ error: 'Internal server error.' });
     }
 });
