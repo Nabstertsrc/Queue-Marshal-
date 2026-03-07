@@ -55,11 +55,8 @@ jobs:
           add_env "VITE_FIREBASE_MEASUREMENT_ID" "${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}" "${{ vars.VITE_FIREBASE_MEASUREMENT_ID }}"
           add_env "VITE_GOOGLE_MAPS_API_KEY" "${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}" "${{ vars.VITE_GOOGLE_MAPS_API_KEY }}"
           add_env "VITE_API_URL" "${{ secrets.VITE_API_URL }}" "${{ vars.VITE_API_URL }}"
-          add_env "GEMINI_API_KEY" "${{ secrets.GEMINI_API_KEY }}" "${{ vars.GEMINI_API_KEY }}"
           add_env "VITE_YOCO_PUBLIC_KEY" "${{ secrets.VITE_YOCO_PUBLIC_KEY }}" "${{ vars.VITE_YOCO_PUBLIC_KEY }}"
-          add_env "YOCO_SECRET_KEY" "${{ secrets.YOCO_SECRET_KEY }}" "${{ vars.YOCO_SECRET_KEY }}"
-          add_env "PAYPAL_CLIENT_ID" "${{ secrets.PAYPAL_CLIENT_ID }}" "${{ vars.PAYPAL_CLIENT_ID }}"
-          add_env "PAYPAL_CLIENT_SECRET" "${{ secrets.PAYPAL_CLIENT_SECRET }}" "${{ vars.PAYPAL_CLIENT_SECRET }}"
+          add_env "VITE_PAYPAL_CLIENT_ID" "${{ secrets.VITE_PAYPAL_CLIENT_ID }}" "${{ vars.VITE_PAYPAL_CLIENT_ID }}"
 
       - name: CI Diagnostic 🔍
         run: |
