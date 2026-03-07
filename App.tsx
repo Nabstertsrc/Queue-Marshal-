@@ -10,6 +10,7 @@ import DashboardPage from './pages/DashboardPage';
 import ChatPage from './pages/ChatPage';
 import AdminPage from './pages/AdminPage';
 import PaymentPage from './pages/PaymentPage';
+import MessagesPage from './pages/MessagesPage';
 import SplashScreen from './components/SplashScreen';
 import Header from './components/Header';
 
@@ -44,6 +45,7 @@ const Main: React.FC = () => {
         <Route path="/register" element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/" />} />
         <Route path="/" element={isAuthenticated ? <HomePage /> : <Navigate to="/login" />} />
         <Route path="/dashboard" element={isAuthenticated ? <DashboardPage /> : <Navigate to="/login" />} />
+        <Route path="/messages" element={isAuthenticated ? <MessagesPage /> : <Navigate to="/login" />} />
         <Route path="/chat/:taskId" element={isAuthenticated ? <ChatPage /> : <Navigate to="/login" />} />
         <Route path="/payment" element={isAuthenticated ? <PaymentPage /> : <Navigate to="/login" />} />
         <Route path="/admin" element={isAuthenticated && user?.isAdmin ? <AdminPage /> : <Navigate to="/" />} />
