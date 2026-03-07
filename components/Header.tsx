@@ -23,6 +23,7 @@ const Header: React.FC = () => {
 
   const isActive = (path: string) => location.pathname === path;
   const isVerified = user?.verificationStatus === VerificationStatus.VERIFIED;
+  const isAndroid = /Android/i.test(navigator.userAgent);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -144,6 +145,12 @@ const Header: React.FC = () => {
                         Admin Panel
                       </Link>
                     )}
+                    {isAndroid && (
+                      <a href="/queue-marshal.apk" download className="flex items-center px-4 py-2.5 text-sm text-primary hover:bg-dark-700 transition-colors">
+                        <svg className="mr-3 h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        Download Android App
+                      </a>
+                    )}
                     <div className="border-t border-dark-600 my-1"></div>
                     <button onClick={() => { logout(); setDropdownOpen(false); }} className="w-full text-left flex items-center px-4 py-2.5 text-sm text-red-400 hover:bg-dark-700 transition-colors">
                       <LogoutIcon className="mr-3 h-4 w-4 text-red-400" />Log out
@@ -179,6 +186,14 @@ const Header: React.FC = () => {
               <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${isActive('/admin') ? 'text-white bg-dark-600' : 'text-dark-200'}`}>
                 Admin Panel
               </Link>
+            )}
+            {isAndroid && (
+              <a href="/queue-marshal.apk" download className="block px-3 py-2.5 rounded-lg text-sm font-bold text-primary bg-primary/10 transition-all border border-primary/20">
+                <span className="flex items-center">
+                  <svg className="mr-3 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                  Download Android App (APK)
+                </span>
+              </a>
             )}
           </div>
         </div>
