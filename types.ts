@@ -88,6 +88,7 @@ export interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string, role: UserRole) => Promise<void>;
   register: (userData: Omit<User, 'id' | 'balance'> & { password?: string }) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   logout: () => void;
   updateUser: (updatedUser: User) => void;
   updateUserLocation: (location: { lat: number; lng: number }) => Promise<void>;

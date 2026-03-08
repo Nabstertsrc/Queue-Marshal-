@@ -62,7 +62,12 @@ const LoginPage: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-dark-100 mb-1.5">Password</label>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label htmlFor="password" className="block text-sm font-medium text-dark-100">Password</label>
+                  <Link to="/reset-password" className="text-xs font-medium text-primary hover:text-primary-300 transition-colors">
+                    Forgot password?
+                  </Link>
+                </div>
                 <input id="password" name="password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="w-full px-4 py-3 bg-dark-700 border border-dark-500 rounded-xl text-white placeholder-dark-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 text-sm" />

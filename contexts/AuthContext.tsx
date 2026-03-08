@@ -116,6 +116,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       await db.collection('users').doc(authUser.uid).set(userToStore);
+
+      // Send email verification
+      await authUser.sendEmailVerification();
+
       await auth.signOut();
     } catch (error: any) {
       let message = 'Failed to register.';
@@ -133,6 +137,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(async () => {
     await auth.signOut();
     setUser(null);
+  }, []);
+
+  const resetPassword = useCallback(async (email: string) => {
+    try {
+      await auth.sendPasswordResetEmail(email);
+    } catch (error: any) {
+      let message = 'Failed to send password reset email.';
+      if (error.code === 'auth/user-not-found') {
+        message = 'No account found with this email.';
+      } else if (error.message) {
+        message = error.message;
+      }
+      throw new Error(message);
+    }
   }, []);
 
   const updateUser = useCallback(async (updatedUser: User) => {
@@ -165,6 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     login,
     register,
+    resetPassword,
     logout,
     updateUser,
     updateUserLocation,

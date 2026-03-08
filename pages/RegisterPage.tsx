@@ -65,8 +65,8 @@ const RegisterPage: React.FC = () => {
         setLoading(true);
         try {
             await register({ ...formData, location });
-            setSuccess('Registration successful! Redirecting to login...');
-            setTimeout(() => navigate('/login'), 2000);
+            setSuccess('Registration successful! Redirecting to setup...');
+            setTimeout(() => navigate('/welcome'), 2000);
         } catch (err: any) {
             setError(err.message || 'Failed to register.');
         } finally {

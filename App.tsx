@@ -8,6 +8,8 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
+import WelcomePage from './pages/WelcomePage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import ChatPage from './pages/ChatPage';
 import AdminPage from './pages/AdminPage';
 import PaymentPage from './pages/PaymentPage';
@@ -35,7 +37,7 @@ const App: React.FC = () => {
 const Main: React.FC = () => {
   const { isAuthenticated, loading, user } = useAuth();
   const location = useLocation();
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/reset-password' || location.pathname === '/welcome';
 
   if (loading) {
     return <SplashScreen />;
@@ -48,6 +50,8 @@ const Main: React.FC = () => {
       <Routes>
         <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/" />} />
         <Route path="/register" element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/" />} />
+        <Route path="/reset-password" element={!isAuthenticated ? <ResetPasswordPage /> : <Navigate to="/" />} />
+        <Route path="/welcome" element={<WelcomePage />} />
         <Route path="/" element={isAuthenticated ? <HomePage /> : <Navigate to="/login" />} />
         <Route path="/dashboard" element={isAuthenticated ? <DashboardPage /> : <Navigate to="/login" />} />
         <Route path="/messages" element={isAuthenticated ? <MessagesPage /> : <Navigate to="/login" />} />
