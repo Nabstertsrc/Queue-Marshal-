@@ -17,12 +17,12 @@ const LandingPage: React.FC = () => {
             <AnimatedBackground />
 
             {/* Navbar */}
-            <nav className="fixed top-0 w-full z-50 glass border-b border-dark-600/50 px-6 py-4 flex justify-between items-center transition-all duration-300">
-                <div className="flex items-center space-x-3 group cursor-pointer" onClick={() => navigate('/')}>
-                    <LogoIcon className="h-10 w-auto group-hover:scale-110 transition-transform" />
-                    <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-dark-200 bg-clip-text text-transparent">Queue Marshal</span>
+            <nav className="fixed top-0 w-full z-50 bg-dark-900/80 backdrop-blur-xl border-b border-dark-600/50 px-6 py-4 flex justify-between items-center transition-all duration-300">
+                <div className="flex items-center space-x-2 group cursor-pointer" onClick={() => navigate('/')}>
+                    <LogoIcon className="h-8 w-8 sm:h-9 sm:w-9 transition-transform group-hover:scale-110" />
+                    <span className="text-xl sm:text-2xl font-bold tracking-tight text-white">Queue-Marshal</span>
                 </div>
-                <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-4 sm:space-x-6">
                     <Link to="/login" className="text-sm font-medium text-dark-200 hover:text-primary transition-colors">Log In</Link>
                     <Link to="/register" className="px-5 py-2.5 bg-primary text-dark-900 text-sm font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-400 hover:scale-105 active:scale-95 transition-all">Sign Up</Link>
                 </div>
@@ -64,7 +64,7 @@ const LandingPage: React.FC = () => {
                     <div className="absolute -inset-4 bg-primary/20 blur-3xl rounded-full animate-pulse-slow"></div>
                     <div className="relative glass p-4 rounded-[3rem] border border-white/10 shadow-2xl skew-y-3 hover:skew-y-0 transition-all duration-700">
                         <img
-                            src="https://images.unsplash.com/photo-1541746972996-4e0b0f43e01a?q=80&w=1000&auto=format&fit=crop"
+                            src="/images/hero.png"
                             alt="People in line"
                             className="rounded-[2.5rem] object-cover h-[500px] w-full"
                         />
@@ -127,7 +127,7 @@ const LandingPage: React.FC = () => {
                     <div className="flex-1 order-2 md:order-1 relative">
                         <div className="glass overflow-hidden rounded-[2.5rem] border border-white/10">
                             <img
-                                src="https://images.unsplash.com/photo-1512428559083-a400a3b8463a?q=80&w=1000&auto=format&fit=crop"
+                                src="/images/requester.png"
                                 alt="Requester"
                                 className="w-full h-[400px] object-cover hover:scale-105 transition-transform duration-1000"
                             />
@@ -178,9 +178,9 @@ const LandingPage: React.FC = () => {
                         </Link>
                     </div>
                     <div className="flex-1">
-                        <div className="rounded-[3rem] overflow-hidden border-8 border-black shadow-2xl">
+                        <div className="rounded-[3rem] overflow-hidden border-8 border-black/10 shadow-2xl">
                             <img
-                                src="https://images.unsplash.com/photo-1543269602-fa3954930be7?q=80&w=1000&auto=format&fit=crop"
+                                src="/images/marshal.png"
                                 alt="Marshal"
                                 className="w-full h-[500px] object-cover"
                             />
