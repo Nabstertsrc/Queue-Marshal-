@@ -22,8 +22,8 @@ const AdminPage: React.FC = () => {
         setLoading(true);
         const unsubscribe = db.collection('users')
             .where('role', '==', roleTab)
-            .onSnapshot(snapshot => {
-                const userData = snapshot.docs.map(doc => ({
+            .onSnapshot((snapshot: any) => {
+                const userData = snapshot.docs.map((doc: any) => ({
                     id: doc.id,
                     ...doc.data(),
                 })) as User[];
