@@ -7,6 +7,7 @@ interface ThemeEditorProps {
 
 const themeOptions: { id: Theme; name: string; desc: string; colors: string[] }[] = [
     { id: 'default', name: 'Queue Marshal', desc: 'The classic vibrant look', colors: ['bg-[#00D26A]', 'bg-[#1A1A1A]'] },
+    { id: 'light', name: 'Queue Marshal Light', desc: 'Fresh, bright, & clean', colors: ['bg-[#00D26A]', 'bg-[#FFFFFF]'] },
     { id: 'cyberpunk', name: 'Neon Cyberpunk', desc: 'High contrast futuristic', colors: ['bg-[#FF0066]', 'bg-[#0F0F1E]'] },
     { id: 'luxury', name: 'Prestige Gold', desc: 'Elegant & sophisticated', colors: ['bg-[#D4AF37]', 'bg-[#14120F]'] },
     { id: 'ocean', name: 'Deep Ocean', desc: 'Calming dark blue depths', colors: ['bg-[#00BFFF]', 'bg-[#051428]'] },
@@ -43,8 +44,8 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ onClose }) => {
                             key={t.id}
                             onClick={() => setTheme(t.id)}
                             className={`w-full flex items-center p-4 rounded-xl border transition-all duration-300 group ${activeTheme === t.id
-                                    ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgba(var(--color-primary-500),0.15)] relative overflow-hidden'
-                                    : 'bg-dark-700 border-dark-500 hover:border-dark-400 hover:bg-dark-600'
+                                ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgba(var(--color-primary-500),0.15)] relative overflow-hidden'
+                                : 'bg-dark-700 border-dark-500 hover:border-dark-400 hover:bg-dark-600'
                                 }`}
                         >
                             {activeTheme === t.id && (
