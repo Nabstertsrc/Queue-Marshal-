@@ -4,7 +4,7 @@ import AnimatedBackground from '../components/AnimatedBackground';
 import { LogoIcon } from '../components/icons/LogoIcon';
 
 const WelcomePage: React.FC = () => {
-    const siteUrl = "https://queue-marshal-server-production.up.railway.app";
+    const siteUrl = "https://profilegenius.fun";
     const shareMessage = "I just signed up for Queue Marshal! Get your time back by hiring a verified marshal to stand in line for you. Sign up today:";
 
     const twitterShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareMessage)}&url=${encodeURIComponent(siteUrl)}`;

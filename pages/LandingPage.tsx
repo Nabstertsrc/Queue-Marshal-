@@ -5,7 +5,7 @@ import AnimatedBackground from '../components/AnimatedBackground';
 
 const LandingPage: React.FC = () => {
     const navigate = useNavigate();
-    const siteUrl = "https://queue-marshal-server-production.up.railway.app";
+    const siteUrl = "https://profilegenius.fun";
     const shareMessage = "Reclaim your time with Queue Marshal! The premiere marketplace for time.";
 
     const twitterShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareMessage)}&url=${encodeURIComponent(siteUrl)}`;
