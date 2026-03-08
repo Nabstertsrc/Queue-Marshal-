@@ -219,7 +219,7 @@ app.get('/api/health', (req, res) => {
 // Create a new task (Protected)
 app.post('/api/tasks', authenticate, async (req, res) => {
     try {
-        const { taskData, paymentMethod } = req.body;
+        const { taskData, paymentMethod, isPaid } = req.body;
         const { uid } = req.user;
 
         if (!taskData || !paymentMethod) {
@@ -270,6 +270,7 @@ app.post('/api/tasks', authenticate, async (req, res) => {
             createdAt: Date.now(),
             status: 'Open',
             paymentMethod: paymentMethod,
+            isPaid: isPaid || false,
             marshalId: null,
             requesterRated: false,
             marshalRated: false,
@@ -400,11 +401,14 @@ app.post('/api/tasks/:taskId/complete', authenticate, async (req, res) => {
                 const totalDeductionVal = taskData.totalFee || (baseFee * 1.05 * 1.15);
                 const marshalPayout = baseFee;
 
-                if (requesterData.balance < totalDeductionVal) {
-                    throw new Error('Requester has insufficient funds for the task and fees.');
+                // Only deduct from requester balance if it hasn't been paid yet (e.g. internal balance tasks)
+                if (!taskData.isPaid) {
+                    if (requesterData.balance < totalDeductionVal) {
+                        throw new Error('Requester has insufficient funds for the task and fees.');
+                    }
+                    transaction.update(requesterRef, { balance: requesterData.balance - totalDeductionVal });
                 }
 
-                transaction.update(requesterRef, { balance: requesterData.balance - totalDeductionVal });
                 transaction.update(marshalRef, { balance: marshalData.balance + marshalPayout });
             }
 

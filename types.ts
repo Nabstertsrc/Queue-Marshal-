@@ -59,6 +59,7 @@ export interface Task {
   createdAt: number; // timestamp
   status: TaskStatus;
   paymentMethod: PaymentMethod;
+  isPaid?: boolean;
   requesterRated?: boolean;
   marshalRated?: boolean;
 }
@@ -97,7 +98,7 @@ export interface AuthContextType {
 export interface TaskContextType {
   tasks: Task[];
   openTasks: Task[];
-  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'status' | 'requesterId' | 'paymentMethod'>, paymentMethod: PaymentMethod) => Promise<Task>;
+  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'status' | 'requesterId' | 'paymentMethod' | 'isPaid'>, paymentMethod: PaymentMethod, isPaid?: boolean) => Promise<Task>;
   acceptTask: (taskId: string) => Promise<void>;
   completeTask: (taskId: string) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;

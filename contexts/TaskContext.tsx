@@ -57,8 +57,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const openTasks = tasks.filter((task) => task.status === TaskStatus.OPEN);
 
   const addTask = async (
-    taskData: Omit<Task, 'id' | 'createdAt' | 'status' | 'requesterId' | 'paymentMethod'>,
-    paymentMethod: PaymentMethod
+    taskData: Omit<Task, 'id' | 'createdAt' | 'status' | 'requesterId' | 'paymentMethod' | 'isPaid'>,
+    paymentMethod: PaymentMethod,
+    isPaid: boolean = false
   ): Promise<Task> => {
     try {
       console.log('--- addTask API Attempt ---');
@@ -70,7 +71,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ taskData, paymentMethod }),
+        body: JSON.stringify({ taskData, paymentMethod, isPaid }),
       });
 
       if (!response.ok) {
@@ -95,6 +96,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createdAt: Date.now(),
         status: TaskStatus.OPEN,
         paymentMethod: paymentMethod,
+        isPaid: isPaid,
         marshalId: null,
         requesterRated: false,
         marshalRated: false,

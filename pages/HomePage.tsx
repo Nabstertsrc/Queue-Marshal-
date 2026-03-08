@@ -52,7 +52,7 @@ const HomePage: React.FC = () => {
           if (data.success || data.message === 'Payment already processed.') {
             const taskDetails = JSON.parse(pendingDetailsStr);
             console.log('Posting Task to Database...');
-            await addTask(taskDetails, PaymentMethod.PREPAID);
+            await addTask(taskDetails, PaymentMethod.PREPAID, true);
             alert('Payment successful! Your task has been posted.');
             sessionStorage.removeItem('pendingYocoTaskCheckout');
             sessionStorage.removeItem('pendingTaskDetails');
