@@ -64,7 +64,7 @@ const LandingPage: React.FC = () => {
                     <div className="absolute -inset-4 bg-primary/20 blur-3xl rounded-full animate-pulse-slow"></div>
                     <div className="relative glass p-4 rounded-[3rem] border border-white/10 shadow-2xl skew-y-3 hover:skew-y-0 transition-all duration-700">
                         <img
-                            src="https://images.unsplash.com/photo-1541746972996-4e0b0f43e01a?q=80\u0026w=1000\u0026auto=format\u0026fit=crop"
+                            src="https://images.unsplash.com/photo-1541746972996-4e0b0f43e01a?q=80&w=1000&auto=format&fit=crop"
                             alt="People in line"
                             className="rounded-[2.5rem] object-cover h-[500px] w-full"
                         />
@@ -127,7 +127,7 @@ const LandingPage: React.FC = () => {
                     <div className="flex-1 order-2 md:order-1 relative">
                         <div className="glass overflow-hidden rounded-[2.5rem] border border-white/10">
                             <img
-                                src="https://images.unsplash.com/photo-1512428559083-a400a3b8463a?q=80\u0026w=1000\u0026auto=format\u0026fit=crop"
+                                src="https://images.unsplash.com/photo-1512428559083-a400a3b8463a?q=80&w=1000&auto=format&fit=crop"
                                 alt="Requester"
                                 className="w-full h-[400px] object-cover hover:scale-105 transition-transform duration-1000"
                             />
@@ -155,11 +155,11 @@ const LandingPage: React.FC = () => {
             </section>
 
             {/* Marshals Section */}
-            <section className="py-24 px-6 bg-primary text-dark-900">
+            <section className="py-24 px-6 bg-primary text-black">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-16 items-center">
                     <div className="flex-1 space-y-8">
-                        <div className="inline-block px-3 py-1 bg-dark-900/10 rounded-full text-xs font-bold uppercase tracking-widest border border-dark-900/10">The Opportunity</div>
-                        <h2 className="text-6xl font-black tracking-tighter leading-none">For Marshals:<br />Turning Patience into Profit</h2>
+                        <div className="inline-block px-3 py-1 bg-black/10 rounded-full text-xs font-bold uppercase tracking-widest border border-black/10">The Opportunity</div>
+                        <h2 className="text-6xl font-black tracking-tighter leading-none text-black">For Marshals:<br />Turning Patience into Profit</h2>
                         <div className="grid gap-4">
                             {[
                                 "Live Map: See top-paying requests nearby at a glance.",
@@ -167,20 +167,20 @@ const LandingPage: React.FC = () => {
                                 "Live Wallet: Monitor earnings and withdraw to verified accounts.",
                                 "Vetted Community: Join a trusted network with human-led onboarding."
                             ].map((text, i) => (
-                                <div key={i} className="flex items-center space-x-3 font-bold">
-                                    <span className="w-2 h-2 bg-dark-900 rounded-full"></span>
+                                <div key={i} className="flex items-center space-x-3 font-bold text-black/90">
+                                    <span className="w-2 h-2 bg-black rounded-full"></span>
                                     <span>{text}</span>
                                 </div>
                             ))}
                         </div>
-                        <Link to="/register" className="inline-block px-10 py-5 bg-dark-900 text-white font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-2xl">
+                        <Link to="/register" className="inline-block px-10 py-5 bg-black text-white font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-2xl">
                             Join the Network
                         </Link>
                     </div>
                     <div className="flex-1">
-                        <div className="rounded-[3rem] overflow-hidden border-8 border-dark-900 shadow-2xl">
+                        <div className="rounded-[3rem] overflow-hidden border-8 border-black shadow-2xl">
                             <img
-                                src="https://images.unsplash.com/photo-1543269602-fa3954930be7?q=80\u0026w=1000\u0026auto=format\u0026fit=crop"
+                                src="https://images.unsplash.com/photo-1543269602-fa3954930be7?q=80&w=1000&auto=format&fit=crop"
                                 alt="Marshal"
                                 className="w-full h-[500px] object-cover"
                             />
