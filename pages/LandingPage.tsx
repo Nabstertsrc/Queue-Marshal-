@@ -196,11 +196,12 @@ const LandingPage: React.FC = () => {
                         <LogoIcon className="h-8 w-auto" />
                         <span className="font-bold tracking-tight">Queue Marshal</span>
                     </div>
-                    <div className="flex space-x-8 text-sm font-medium text-dark-300">
+                    <div className="flex flex-wrap justify-center space-x-6 sm:space-x-8 text-sm font-medium text-dark-300">
                         <Link to="/login" className="hover:text-primary transition-colors">Login</Link>
                         <Link to="/register" className="hover:text-primary transition-colors">Signup</Link>
-                        <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
-                        <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
+                        <Link to="/faq" className="hover:text-primary transition-colors">FAQs</Link>
+                        <Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+                        <Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
                     </div>
                     <div className="text-xs text-dark-400">
                         © 2026 Queue Marshal. All rights reserved.

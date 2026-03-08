@@ -15,6 +15,9 @@ import ChatPage from './pages/ChatPage';
 import AdminPage from './pages/AdminPage';
 import PaymentPage from './pages/PaymentPage';
 import MessagesPage from './pages/MessagesPage';
+import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
+import FAQPage from './pages/FAQPage';
 import SplashScreen from './components/SplashScreen';
 import Header from './components/Header';
 import PushNotificationManager from './components/PushNotificationManager';
@@ -38,7 +41,7 @@ const App: React.FC = () => {
 const Main: React.FC = () => {
   const { isAuthenticated, loading, user } = useAuth();
   const location = useLocation();
-  const publicPaths = ['/login', '/register', '/reset-password', '/welcome', '/'];
+  const publicPaths = ['/login', '/register', '/reset-password', '/welcome', '/', '/privacy', '/terms', '/faq'];
   const isAuthPage = publicPaths.includes(location.pathname);
 
   if (loading) {
@@ -55,6 +58,9 @@ const Main: React.FC = () => {
         <Route path="/reset-password" element={!isAuthenticated ? <ResetPasswordPage /> : <Navigate to="/" />} />
         <Route path="/welcome" element={<WelcomePage />} />
         <Route path="/" element={isAuthenticated ? <HomePage /> : <LandingPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/faq" element={<FAQPage />} />
 
         <Route path="/dashboard" element={isAuthenticated ? <DashboardPage /> : <Navigate to="/login" />} />
         <Route path="/messages" element={isAuthenticated ? <MessagesPage /> : <Navigate to="/login" />} />
