@@ -44,12 +44,16 @@ const Main: React.FC = () => {
   const publicPaths = ['/login', '/register', '/reset-password', '/welcome', '/', '/privacy', '/terms', '/faq'];
   const isAuthPage = publicPaths.includes(location.pathname);
 
+  // These pages should allow the window to scroll
+  const isContentPage = ['/privacy', '/terms', '/faq', '/login', '/register', '/reset-password', '/welcome'].includes(location.pathname) ||
+    (location.pathname === '/' && !isAuthenticated);
+
   if (loading) {
     return <SplashScreen />;
   }
 
   return (
-    <div className={`flex flex-col h-screen overflow-hidden ${isAuthPage ? 'bg-transparent' : 'bg-dark-900 bg-app-gradient'}`}>
+    <div className={`flex flex-col ${isContentPage ? 'min-h-screen overflow-y-auto' : 'h-screen overflow-hidden'} ${isAuthPage ? 'bg-transparent' : 'bg-dark-900 bg-app-gradient'}`}>
       {isAuthenticated && <Header />}
       {isAuthenticated && <PushNotificationManager />}
       <Routes>
