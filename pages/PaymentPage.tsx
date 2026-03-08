@@ -14,7 +14,8 @@ const PaymentPage: React.FC = () => {
     const location = useLocation();
 
     React.useEffect(() => {
-        const queryParams = new URLSearchParams(location.search);
+        const searchString = window.location.search || location.search;
+        const queryParams = new URLSearchParams(searchString);
         const yocoSuccess = queryParams.get('yoco_success');
         const pendingCheckoutId = sessionStorage.getItem('pendingYocoCheckout');
 
@@ -57,9 +58,9 @@ const PaymentPage: React.FC = () => {
     const handleYocoPayment = async () => {
         setLoading(true);
         try {
-            const currentUrl = window.location.href.split('?')[0];
-            const successUrl = `${currentUrl}?yoco_success=true`;
-            const cancelUrl = currentUrl;
+            const baseUrl = window.location.origin + window.location.pathname;
+            const successUrl = `${baseUrl}?yoco_success=true#/payment`;
+            const cancelUrl = `${baseUrl}#/payment`;
 
             const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://queue-marshal-server-production.up.railway.app'}/api/payments/yoco/create-checkout`, {
                 method: 'POST',

@@ -18,8 +18,9 @@ const HomePage: React.FC = () => {
   const [globalLoading, setGlobalLoading] = useState(false);
 
   React.useEffect(() => {
-    // Correctly get search params from the hash route using useLocation
-    const queryParams = new URLSearchParams(location.search);
+    // When using HashRouter, external redirects usually put the query string before the hash.
+    const searchString = window.location.search || location.search;
+    const queryParams = new URLSearchParams(searchString);
     const yocoSuccess = queryParams.get('yoco_task_success');
     const pendingCheckoutId = sessionStorage.getItem('pendingYocoTaskCheckout');
     const pendingDetailsStr = sessionStorage.getItem('pendingTaskDetails');

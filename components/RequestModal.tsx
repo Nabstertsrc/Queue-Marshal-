@@ -129,9 +129,9 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
       console.log('Initiating Yoco Checkout Request...');
       if (!token) throw new Error('Authentication token is missing.');
 
-      const currentUrl = window.location.href.split('?')[0];
-      const successUrl = `${currentUrl}?yoco_task_success=true`;
-      const cancelUrl = currentUrl;
+      const baseUrl = window.location.origin + window.location.pathname;
+      const successUrl = `${baseUrl}?yoco_task_success=true#/`;
+      const cancelUrl = `${baseUrl}#/`;
 
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://queue-marshal-server-production.up.railway.app'}/api/payments/yoco/create-checkout`, {
         method: 'POST',
