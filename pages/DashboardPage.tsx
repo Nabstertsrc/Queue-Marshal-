@@ -251,7 +251,12 @@ const DashboardPage: React.FC = () => {
                                                 </span>
                                             </div>
                                             <p className="text-xs text-dark-400 truncate">{task.location.address}</p>
-                                            <p className="text-sm font-bold text-primary mt-1">R {task.fee.toFixed(2)}</p>
+                                            <p className="text-sm font-bold text-primary mt-1">
+                                                R {user.role === UserRole.REQUESTER
+                                                    ? (task.totalFee || (task.fee * 1.05 * 1.15)).toFixed(2)
+                                                    : task.fee.toFixed(2)}
+                                                {user.role === UserRole.REQUESTER && <span className="text-[10px] text-dark-400 ml-1 font-normal">(total)</span>}
+                                            </p>
                                         </div>
                                         <div className="flex flex-col items-end space-y-2">
                                             {task.status === TaskStatus.IN_PROGRESS && (

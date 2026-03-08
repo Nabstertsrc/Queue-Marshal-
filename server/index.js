@@ -226,7 +226,10 @@ app.post('/api/tasks', authenticate, async (req, res) => {
             return res.status(400).json({ error: 'Missing task data or payment method.' });
         }
 
-        const { title, description, location, fee, duration } = taskData;
+        const { title, description, location, fee, duration, appCommission, vatRate, totalFee } = taskData;
+
+        // Use totalFee for fee limit check
+        const finalAmountToCheck = totalFee || fee;
 
         // Validate
         if (!title || !description || !location || !fee || !duration) {
@@ -235,7 +238,7 @@ app.post('/api/tasks', authenticate, async (req, res) => {
         if (typeof fee !== 'number' || typeof duration !== 'number' || fee <= 0 || duration <= 0) {
             return res.status(400).json({ error: 'Invalid fee or duration.' });
         }
-        if (fee > 10000) {
+        if (finalAmountToCheck > 10000) {
             return res.status(400).json({ error: 'Fee cannot exceed R10,000.' });
         }
         if (!location.address || typeof location.lat !== 'number' || typeof location.lng !== 'number') {
@@ -259,6 +262,9 @@ app.post('/api/tasks', authenticate, async (req, res) => {
                 lng: location.lng,
             },
             fee,
+            appCommission: appCommission || (fee * 0.05),
+            vatRate: vatRate || 0.15,
+            totalFee: totalFee || (fee * 1.05 * 1.15),
             duration,
             requesterId: uid,
             createdAt: Date.now(),
@@ -390,15 +396,15 @@ app.post('/api/tasks/:taskId/complete', authenticate, async (req, res) => {
 
                 const requesterData = requesterDoc.data();
                 const marshalData = marshalDoc.data();
-                const fee = taskData.fee;
-                const commission = fee * 0.15;
-                const marshalPayout = fee - commission;
+                const baseFee = taskData.fee;
+                const totalDeductionVal = taskData.totalFee || (baseFee * 1.05 * 1.15);
+                const marshalPayout = baseFee;
 
-                if (requesterData.balance < fee) {
-                    throw new Error('Requester has insufficient funds.');
+                if (requesterData.balance < totalDeductionVal) {
+                    throw new Error('Requester has insufficient funds for the task and fees.');
                 }
 
-                transaction.update(requesterRef, { balance: requesterData.balance - fee });
+                transaction.update(requesterRef, { balance: requesterData.balance - totalDeductionVal });
                 transaction.update(marshalRef, { balance: marshalData.balance + marshalPayout });
             }
 

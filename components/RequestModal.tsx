@@ -43,9 +43,12 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
 
   useEffect(() => {
     const fee = taskDetails.fee || 0;
-    const calculatedCommission = fee * 0.15;
-    setCommission(calculatedCommission);
-    setTotalAmount(fee + calculatedCommission);
+    const appFee = fee * 0.05;
+    const vat = (fee + appFee) * 0.15;
+    const total = fee + appFee + vat;
+
+    setCommission(appFee + vat); // Use commission state to store total extra fees for simplicity or separate them
+    setTotalAmount(total);
   }, [taskDetails.fee]);
 
   useEffect(() => {
@@ -153,6 +156,9 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
           description: taskDetails.description,
           location: taskDetails.location,
           fee: taskDetails.fee,
+          appCommission: (taskDetails.fee || 0) * 0.05,
+          vatRate: 0.15,
+          totalFee: totalAmount,
           duration: taskDetails.duration,
         }));
 
@@ -186,8 +192,11 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
         title: taskDetails.title,
         description: taskDetails.description,
         location: taskDetails.location as any,
-        fee: taskDetails.fee,
-        duration: taskDetails.duration,
+        fee: taskDetails.fee || 0,
+        appCommission: (taskDetails.fee || 0) * 0.05,
+        vatRate: 0.15,
+        totalFee: totalAmount,
+        duration: taskDetails.duration || 0,
       };
 
       console.log('Sending addTask request...');
@@ -291,15 +300,19 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
             {taskDetails.fee && taskDetails.fee > 0 && (
               <div className="p-4 bg-dark-700/50 rounded-xl border border-dark-500 space-y-2">
                 <div className="flex justify-between text-xs text-dark-200">
-                  <span>Marshal fee</span>
+                  <span>Marshal fee (Base)</span>
                   <span>R {taskDetails.fee.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-xs text-dark-200">
-                  <span>Service fee (15%)</span>
-                  <span>R {commission.toFixed(2)}</span>
+                  <span>App Service Fee (5%)</span>
+                  <span>R {(taskDetails.fee * 0.05).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-dark-200">
+                  <span>VAT (15%)</span>
+                  <span>R {((taskDetails.fee * 1.05) * 0.15).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm font-bold text-white pt-2 border-t border-dark-500">
-                  <span>Total</span>
+                  <span>Total Payable</span>
                   <span className="text-primary">R {totalAmount.toFixed(2)}</span>
                 </div>
               </div>

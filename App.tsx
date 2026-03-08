@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { TaskProvider } from './contexts/TaskContext';
 import { LocationTrackingProvider } from './contexts/LocationTrackingContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
@@ -17,15 +18,17 @@ import PushNotificationManager from './components/PushNotificationManager';
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <TaskProvider>
-        <LocationTrackingProvider>
-          <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-            <Main />
-          </HashRouter>
-        </LocationTrackingProvider>
-      </TaskProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <TaskProvider>
+          <LocationTrackingProvider>
+            <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+              <Main />
+            </HashRouter>
+          </LocationTrackingProvider>
+        </TaskProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 
@@ -39,7 +42,7 @@ const Main: React.FC = () => {
   }
 
   return (
-    <div className={`flex flex-col h-screen ${isAuthPage ? 'bg-transparent' : 'bg-dark-900'}`}>
+    <div className={`flex flex-col h-screen overflow-hidden ${isAuthPage ? 'bg-transparent' : 'bg-dark-900 bg-app-gradient'}`}>
       {isAuthenticated && <Header />}
       {isAuthenticated && <PushNotificationManager />}
       <Routes>

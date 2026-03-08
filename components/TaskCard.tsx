@@ -45,15 +45,18 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, isSelected }) => {
   return (
     <div id={`task-${task.id}`}
       className={`bg-dark-800 rounded-2xl overflow-hidden transition-all duration-300 border ${isSelected
-          ? 'border-primary/50 shadow-lg shadow-primary/10'
-          : 'border-dark-600/50 hover:border-dark-400'
+        ? 'border-primary/50 shadow-lg shadow-primary/10'
+        : 'border-dark-600/50 hover:border-dark-400'
         }`}
     >
       <div className="p-4 flex items-start space-x-4">
-        {/* Left: Price circle */}
         <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-primary/10 flex flex-col items-center justify-center">
           <span className="text-xs text-primary font-medium">ZAR</span>
-          <span className="text-lg font-bold text-primary leading-tight">{task.fee.toFixed(0)}</span>
+          <span className="text-lg font-bold text-primary leading-tight">
+            {(user?.role === UserRole.REQUESTER
+              ? (task.totalFee || (task.fee * 1.05 * 1.15))
+              : task.fee).toFixed(0)}
+          </span>
         </div>
 
         {/* Middle: Details */}
@@ -61,8 +64,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, isSelected }) => {
           <div className="flex items-start justify-between">
             <h3 className="text-white font-semibold text-base truncate pr-2">{task.title}</h3>
             <span className={`flex-shrink-0 px-2 py-0.5 text-[10px] font-semibold rounded-full uppercase tracking-wider ${task.paymentMethod === PaymentMethod.PREPAID
-                ? 'bg-primary/15 text-primary'
-                : 'bg-amber-500/15 text-amber-400'
+              ? 'bg-primary/15 text-primary'
+              : 'bg-amber-500/15 text-amber-400'
               }`}>
               {task.paymentMethod === PaymentMethod.PREPAID ? 'Paid' : 'Cash'}
             </span>
@@ -101,7 +104,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, isSelected }) => {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

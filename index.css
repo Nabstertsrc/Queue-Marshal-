@@ -6,17 +6,74 @@
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+:root {
+  --color-primary-400: 26 255 140;
+  /* #1AFF8C */
+  --color-primary-500: 0 210 106;
+  /* #00D26A */
+  --color-dark-800: 20 20 20;
+  /* #141414 */
+  --color-dark-900: 13 13 13;
+  /* #0D0D0D */
+  --radius-main: 0.75rem;
+  --app-gradient: none;
+}
+
+[data-theme="cyberpunk"] {
+  --color-primary-400: 255 51 133;
+  /* #FF3385 */
+  --color-primary-500: 255 0 102;
+  /* #FF0066 */
+  --color-dark-800: 10 5 20;
+  --color-dark-900: 5 0 10;
+  --radius-main: 0px;
+  --app-gradient: linear-gradient(135deg, rgba(255, 0, 102, 0.1), rgba(0, 0, 0, 0) 80%);
+}
+
+[data-theme="luxury"] {
+  /* Gold */
+  --color-primary-400: 235 200 80;
+  --color-primary-500: 212 175 55;
+  --color-dark-800: 20 18 15;
+  --color-dark-900: 10 9 5;
+  --radius-main: 0.25rem;
+  --app-gradient: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.08), rgba(10, 9, 5, 1) 40%);
+}
+
+[data-theme="ocean"] {
+  /* Deep Sky Blue */
+  --color-primary-400: 51 204 255;
+  --color-primary-500: 0 191 255;
+  --color-dark-800: 5 15 25;
+  --color-dark-900: 0 10 20;
+  --radius-main: 1.5rem;
+  --app-gradient: linear-gradient(to bottom, rgba(0, 191, 255, 0.08), rgba(0, 10, 20, 1) 80%);
+}
+
+[data-theme="minimal"] {
+  /* Clean White/Grey */
+  --color-primary-400: 220 220 220;
+  --color-primary-500: 255 255 255;
+  --color-dark-800: 30 30 30;
+  --color-dark-900: 10 10 10;
+  --radius-main: 0.5rem;
+  --app-gradient: none;
+}
+
 /* Custom scrollbar for dark theme */
 ::-webkit-scrollbar {
   width: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: #1A1A1A;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #333;
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #4D4D4D;
 }
@@ -42,7 +99,9 @@
 }
 
 /* Input focus glow */
-input:focus, textarea:focus, select:focus {
+input:focus,
+textarea:focus,
+select:focus {
   box-shadow: 0 0 0 2px rgba(0, 210, 106, 0.2);
 }
 
@@ -54,6 +113,7 @@ input:focus, textarea:focus, select:focus {
   margin-top: 4px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
+
 .pac-item {
   border-top: 1px solid #262626;
   padding: 8px 12px;
@@ -61,16 +121,20 @@ input:focus, textarea:focus, select:focus {
   font-family: 'Inter', sans-serif;
   font-size: 13px;
 }
+
 .pac-item:hover {
   background-color: #262626;
 }
+
 .pac-item-query {
   color: #FFFFFF;
   font-size: 13px;
 }
+
 .pac-matched {
   color: #00D26A;
 }
+
 .pac-icon {
   filter: invert(1) brightness(0.7);
 }

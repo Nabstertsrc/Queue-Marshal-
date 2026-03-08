@@ -1,81 +1,99 @@
-# 🛡️ Queue-Marshal: Official User Guide & Marketing Toolkit
+# 🛡️ Queue-Marshal: The Ultimate User & Marketing Guide
 
-Welcome to **Queue-Marshal**, the ultimate platform designed to give you back your most valuable asset: **Time.** Whether you're stuck in a DMV line, waiting for concert tickets, or needing a spot held at a popular restaurant, Queue-Marshal connects you with local Marshals ready to wait so you don't have to.
+Welcome to **Queue-Marshal**, the premiere marketplace for time. We connect **Requesters** who value their time with **Marshals** who are ready to earn by standing in line. 
 
----
-
-## 📖 How to Use Queue-Marshal
-
-### 🔹 For Requesters (Need a Spot Held)
-1.  **Sign Up & Login**: Create your account as a **Requester**.
-2.  **Post a Request**: Click the **(+)** button on your home screen.
-    *   **AI Boost**: Use the "AI Suggest/Improve" buttons to let our Gemini AI professionally craft your title and description for better results.
-    *   **Set Your Price**: Decide what the wait is worth to you. Our system calculates a small 15% service fee to keep the platform running securely.
-3.  **Choose Payment**: 
-    *   **Pay with Card (Yoco)**: Securely pay upfront. Your funds are only released to the Marshal once the job is verified.
-    *   **Pay on the Spot**: Pay your Marshal in cash once you arrive to take your spot.
-4.  **Track & Chat**: Once a Marshal accepts, you can chat with them in real-time to coordinate the hand-off.
-5.  **Rate Your Marshal**: After the task is done, leave a rating to help build our trusted community.
-
-### 🔸 For Marshals (Earn While You Wait)
-1.  **Register as a Marshal**: Be sure to select the **Marshal** role during signup.
-2.  **Get Verified**: Navigate to your profile/settings and upload your ID and Bank Details. An Admin will review and verify your account within 24 hours. (This is required to protect our Requesters).
-3.  **Browse the Map**: Use the interactive map to find open requests near you.
-4.  **Accept & Wait**: Once you accept a task, head to the location. Use the built-in chat to keep the Requester updated.
-5.  **Get Paid**: 
-    *   For Pre-paid tasks, your balance will be updated in your **Live Wallet**.
-    *   For Cash tasks, collect your fee directly from the Requester at the hand-off.
+This guide covers everything from your first login to launching your first marketing campaign.
 
 ---
 
-## ✨ Key Features Explained
+## 🚀 Getting Started (Step-by-Step)
 
-*   **📍 Interactive Map**: See every queue request in your city in real-time.
-*   **🤖 Gemini AI Integration**: Never struggle with descriptions again. Our AI optimizes your posts to attract the best Marshals.
-*   **💳 Dual-Gate Payment System**: Full support for **Yoco** (Secure Card Payments) and **PayPal** (International Wallet Top-ups).
-*   **💬 Instant Mesh-Chat**: Encrypted, task-specific chat rooms for seamless coordination.
-*   **🛡️ Vetted Excellence**: Every Marshal undergoes a strict manual verification process before they can accept a single task.
-*   **📈 Smart Dashboard**: Track your spending as a Requester or your earnings as a Marshal with detailed transaction history.
+### 1. Unified Registration
+When you first enter [Queue-Marshal](https://profilegenius.fun), you'll choose your primary path. You can always switch or use both features later from your unified dashboard.
+*   **Requester**: For individuals and businesses who need a spot held.
+*   **Marshal**: For those looking to earn money by providing queuing services.
 
----
-
-## 📣 Marketing Toolkit
-
-### 🎥 30-Second Ad Script: "The Life You're Missing"
-
-**[SCENE 1]**
-*(Visual: High-speed montage of people looking bored, frustrated, and tired in long, gray government building lines/grocery lines. Sound: Muffled, slow-tempo clock ticking.)*
-**VOICE OVER:** "Life is too short to spend it staring at the back of someone’s head."
-
-**[SCENE 2]**
-*(Visual: Screen splits. On the left, a gray line. On the right, the same person is at a sunny park playing with their dog or at a cafe with friends. Sound: Upbeat, modern lo-fi beat kicks in.)*
-**VOICE OVER:** "Introducing Queue-Marshal. The app that puts an end to the wait."
-
-**[SCENE 3]**
-*(Visual: Close up of the Queue-Marshal app on a phone. We see the AI button being clicked and a description magically appearing. Then a Yoco 'Payment Successful' checkmark.)*
-**VOICE OVER:** "With one tap, hire a verified Marshal to hold your spot. Safe. Secure. AI-powered."
-
-**[SCENE 4]**
-*(Visual: The Requester walks up to the Marshal at the front of a line, they high-five/smile, and the Requester takes the spot.)*
-**VOICE OVER:** "Queue-Marshal. Stop waiting. Start living."
-
-**[FINAL LOGO]**
-*(Visual: Queue-Marshal Logo with "Download on profilegenius.fun" text.)*
+### 2. Profile Perfection
+Before you start, head to your **Dashboard**:
+*   **Everyone**: Upload a profile photo and verify your phone number.
+*   **Marshals**: You **must** upload your ID Document and Proof of Bank Account. An Admin will verify you manually to ensure platform safety.
 
 ---
 
-### 🖼️ AI Image Generation Prompt (For Instagram/Facebook Ads)
+## 📖 Feature Deep-Dive
 
-> **Prompt:** A high-quality cinematic advertisement image. Two split panels. Left side: A person looking exhausted and sweating in a crowded, dimly lit indoor DMV queue. Right side: The same person sitting in a bright, modern cafe with a laptop and coffee, smiling. A floating 3D app icon of a shield and a clock sits in the center. Professional lighting, 8k resolution, vibrant colors on the right, muted tones on the left. Text overlay: "YOUR TIME IS VALUABLE."
+### 🔹 For Requesters: Buying Back Your Time
+1.  **Post a Request**: Tap the **(+)** button. 
+    *   **AI Writing Assistant**: Click "AI Suggest" to have our Gemini AI write a professional, high-converting title and description for your task.
+    *   **Live Map Preview**: Set your exact location on our integrated Google Maps interface.
+2.  **Payment Security**:
+    *   **Yoco Card Payment**: Pay securely with any SA bank card. Funds are held in escrow and only released when the job is done.
+    *   **PayPal**: Top up your local wallet for seamless one-click hiring.
+    *   **Cash on Delivery**: Opt to pay your Marshal directly upon hand-off.
+3.  **The Hand-off**:
+    *   Track your Marshal's location in real-time on your dashboard.
+    *   Use the **Secure Chat** to coordinate exactly when you will arrive to take over the spot.
+    *   **Mark Complete**: Once you take your spot, click "Complete" to release the funds.
+
+### 🔸 For Marshals: The Professional Waiter
+1.  **The Live Map**: See active requests near you. Higher-demand areas (like Home Affairs or popular Banks) often have the best-paying tasks.
+2.  **Accepting Tasks**: Review the distance, the fee, and the requester's rating before accepting.
+3.  **Real-Time Coordination**:
+    *   Once you accept, the requester is notified via **Push Notification**.
+    *   Keep them updated via the task chat.
+4.  **Earnings & Withdrawals**:
+    *   View your **Live Wallet** on your dashboard.
+    *   Withdraw your earnings directly to your verified bank account at any time.
 
 ---
 
-### 📝 Social Media Copy (The "Hook")
+## 📱 The Android Mobile Experience
+For the best experience, Android users should download our native app directly from the website:
+*   **Real-Time Push Notifications**: Get alerted the second a task is accepted or a message is sent.
+*   **Background Tracking**: Marshals can be tracked accurately even if the app is in their pocket.
+*   **One-Tap Access**: No need to open a browser; your business is always one tap away.
 
-**Headline:** 🛑 STOP STANDING STILL.
-**Body:** Tired of the 2-hour wait at Home Affairs? 🙄 Need that new iPhone but hate the launch-day line? 📱 Let someone else do the heavy lifting.
-✅ Verified Marshals
-✅ AI-Powered Easy Posting
-✅ Secure Card & Cash Payments
-Join the revolution at **profilegenius.fun** and buy back your afternoon! 🚀
-#QueueMarshal #TimeIsMoney #SouthAfricaTech #LifeHack
+---
+
+## 📣 Marketing Strategy & Assets
+
+### 🎥 Professional 30-Second Ad Script
+**Title:** "The 100-Hour Thief"
+
+| Time | Visual | Audio/VO |
+| :--- | :--- | :--- |
+| **00-05s** | A ticking clock speeds up fast. Close-up of a person sighing in a long, crowded queue. | "The average human spends 100 hours a year... standing in lines." |
+| **05-15s** | The person pulls out their phone, opens Queue-Marshal, and clicks "Post". A Marshal nearby smiles and accepts. | "Stop the theft. Hire a verified Marshal to hold your spot." |
+| **15-25s** | Cut to the Requester playing with their kids or finishing a business deal. | "Live your life. We'll handle the wait. Built-in AI. Secure payments." |
+| **25-30s** | Logo animation with website link. | "Queue-Marshal. Your time. Reclaimed. Download now at profilegenius.fun" |
+
+---
+
+### 🖼️ AI Image Ad Prompts (Midjourney/DALL-E)
+Use these to create stunning visual ads for Instagram and Facebook:
+
+1.  **The Contrast Ad:**
+    > "A high-end split-screen photography. Left: A desaturated, crowded, rainy sidewalk queue with people looking frustrated. Right: A vibrant, sun-drenched outdoor cafe with a happy person having coffee. In the center, a glowing 3D shield and clock icon. Cinematic lighting, 8k, sharp focus."
+2.  **The Professional Marshal:**
+    > "A confident, smiling person in a professional neon-trimmed vest standing at the front of a queue, holding a phone with a 'Verified' checkmark. High-tech, futuristic aesthetic, city background at dusk. 4k resolution."
+
+---
+
+### 📝 Strategic Social Media Copy
+**The "Value" Hook:**
+"Is your Saturday worth R150? 🤷‍♂️ 
+Stop spending it at the back of a line. From Home Affairs to the latest iPhone launch, Queue-Marshal connects you with verified local Marshals who wait so you don't have to. 
+🛡️ Verified & Secure
+🤖 AI-Powered Ease
+💳 Instant Card Payments
+Buy back your time at: **https://profilegenius.fun**"
+
+---
+
+## 🛡️ Trust & Safety
+*   **Manual Verification**: 100% of Marshals are vetted by humans before going live.
+*   **Escrow Payments**: Your money stays safe until the service is delivered.
+*   **Dispute Resolution**: Our Admin team is available 24/7 to mediate any issues between parties.
+
+---
+*© 2026 Queue-Marshal. Reclaim Your Day.*

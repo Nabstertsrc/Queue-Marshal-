@@ -52,6 +52,9 @@ export interface Task {
     lng: number;
   };
   fee: number;
+  appCommission?: number;
+  totalFee?: number;
+  vatRate?: number;
   duration: number; // in hours
   createdAt: number; // timestamp
   status: TaskStatus;

@@ -6,6 +6,7 @@ import { LogoIcon } from './icons/LogoIcon';
 import { UserIcon, DashboardIcon, LogoutIcon, MessagesIcon } from './icons/HeaderIcons';
 import { VerificationStatus } from '../types';
 import HowItWorksModal from './HowToWorksModal';
+import ThemeEditor from './ThemeEditor';
 
 const VerifiedBadge: React.FC<{ className?: string }> = ({ className = '' }) => (
   <svg className={`w-4 h-4 text-primary ${className}`} viewBox="0 0 20 20" fill="currentColor">
@@ -18,6 +19,7 @@ const Header: React.FC = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [howToOpen, setHowToOpen] = useState(false);
+  const [themeEditorOpen, setThemeEditorOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
@@ -102,6 +104,17 @@ const Header: React.FC = () => {
                 ) : (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 )}
+              </svg>
+            </button>
+
+            {/* Theme Editor button */}
+            <button
+              onClick={() => setThemeEditorOpen(true)}
+              className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-dark-700 text-dark-200 hover:text-primary transition-all duration-200"
+              title="Change Theme"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
               </svg>
             </button>
 
@@ -221,6 +234,7 @@ const Header: React.FC = () => {
       )}
 
       {howToOpen && <HowItWorksModal onClose={() => setHowToOpen(false)} userRole={user?.role} />}
+      {themeEditorOpen && <ThemeEditor onClose={() => setThemeEditorOpen(false)} />}
     </header>
   );
 };
