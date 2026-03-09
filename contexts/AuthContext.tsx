@@ -22,9 +22,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (userDoc.exists) {
           const userData = { id: authUser.uid, ...userDoc.data() } as User;
 
-          // Auto-set admin flag for the designated admin email
-          if (authUser.email === ADMIN_EMAIL && !userData.isAdmin) {
-            await db.collection('users').doc(authUser.uid).update({ isAdmin: true });
+          // Auto-identify admin flag for the designated admin email in state
+          if (authUser.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
             userData.isAdmin = true;
           }
 
@@ -57,9 +56,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await auth.signOut();
             throw new Error('Admin access is restricted.');
           }
-          // Mark as admin if not already
-          if (!userData.isAdmin) {
-            await db.collection('users').doc(authUser.uid).update({ isAdmin: true });
+          // Locally mark as admin for the designated admin email
+          if (email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+            userData.isAdmin = true;
           }
           return; // onAuthStateChanged will set the user
         }

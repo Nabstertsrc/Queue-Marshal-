@@ -80,8 +80,8 @@ const Map: React.FC<MapProps> = ({ tasks, onMarkerClick, selectedTaskId }) => {
                     const newMap = new window.google.maps.Map(ref.current, {
                         center: { lat: -26.2041, lng: 28.0473 },
                         zoom: 11,
-                        styles: darkMapStyles, // Keep local styles
-                        // mapId: 'DEMO_MAP_ID', // REMOVED to prioritize local darkMapStyles
+                        styles: darkMapStyles,
+                        mapId: 'DEMO_MAP_ID', // Required for AdvancedMarkerElement
                         disableDefaultUI: true,
                         zoomControl: true,
                         zoomControlOptions: {
@@ -130,16 +130,16 @@ const Map: React.FC<MapProps> = ({ tasks, onMarkerClick, selectedTaskId }) => {
             tasks.forEach(task => {
                 const isSelected = selectedTaskId === task.id;
 
-                // Use standard Marker with custom Icon (SVG) to support local darkMapStyles
-                const marker = new window.google.maps.Marker({
+                // Create a container for the marker content
+                const content = document.createElement('div');
+                content.innerHTML = createCustomMarkerSvg(task.fee, isSelected);
+
+                // Use AdvancedMarkerElement for modern API support
+                const marker = new window.google.maps.marker.AdvancedMarkerElement({
                     position: task.location,
                     map: map,
                     title: task.title,
-                    icon: {
-                        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(createCustomMarkerSvg(task.fee, isSelected))}`,
-                        scaledSize: new window.google.maps.Size(40, 48),
-                        anchor: new window.google.maps.Point(20, 48)
-                    }
+                    content: content
                 });
 
                 marker.addListener('click', () => {

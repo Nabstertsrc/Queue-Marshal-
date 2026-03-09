@@ -1,5 +1,10 @@
 // Firebase is loaded via CDN script tags in index.html
 // This file provides typed exports for the global firebase SDK
+declare global {
+  interface Window {
+    firebase: any;
+  }
+}
 declare const firebase: any;
 
 // Firebase configuration
@@ -20,12 +25,22 @@ if (import.meta.env.PROD) {
 }
 
 // Initialize Firebase (only once)
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
+if (typeof firebase !== 'undefined') {
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+} else {
+  console.error("Firebase SDK not found. Ensure script tags in index.html are loading.");
+  // Provide a dummy object to prevent immediate crashes in other files
+  window.firebase = {
+    auth: () => ({ onAuthStateChanged: (cb: any) => cb(null), signInWithEmailAndPassword: () => Promise.reject(), currentUser: null }),
+    firestore: () => ({ collection: () => ({ doc: () => ({ get: () => Promise.resolve({ exists: false }) }) }) }),
+    apps: []
+  };
 }
 
-export const auth = firebase.auth();
-export const db = firebase.firestore();
+export const auth = typeof firebase !== 'undefined' ? firebase.auth() : (window.firebase as any).auth();
+export const db = typeof firebase !== 'undefined' ? firebase.firestore() : (window.firebase as any).firestore();
 
 export default firebase;
 

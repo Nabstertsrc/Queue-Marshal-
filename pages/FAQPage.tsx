@@ -47,6 +47,10 @@ const FAQPage: React.FC = () => {
             answer: "Requesters pay the fee set for the task plus a small platform commission and VAT. Requesters can also choose 'On the Spot' payment (cash directly to the Marshal) for flexibility."
         },
         {
+            question: "How can I help grow the Queue Marshal network?",
+            answer: "We love it when our community grows! You can find ready-to-use social media copy, AI image prompts, and even a 30-second video script in your Marshal Dashboard under the 'Marketing' tab. Sharing your unique experience helps more Requesters find the help they need."
+        },
+        {
             question: "Can I cancel a request after posting it?",
             answer: "Yes, you can cancel an 'Open' request at any time for a full refund. Once a Marshal has accepted and started traveling, cancellation might incur a small convenience fee."
         }

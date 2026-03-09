@@ -65,13 +65,19 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('--- addTask API Attempt ---');
       console.log('Payment Method:', paymentMethod);
       const token = await getAuthToken();
+      const taskDataWithRounding = {
+        ...taskData,
+        appCommission: taskData.appCommission ? Math.round(taskData.appCommission * 100) / 100 : undefined,
+        totalFee: taskData.totalFee ? Math.round(taskData.totalFee * 100) / 100 : undefined,
+      };
+
       const response = await fetch(`${API_URL}/api/tasks`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ taskData, paymentMethod, isPaid }),
+        body: JSON.stringify({ taskData: taskDataWithRounding, paymentMethod, isPaid }),
       });
 
       if (!response.ok) {

@@ -121,9 +121,15 @@ if (process.env.ALLOWED_ORIGINS) {
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Refect the origin if it matches our list or if for debugging
+        // Allow requests with no origin (like mobile apps or curl)
         if (!origin) return callback(null, true);
-        callback(null, origin); // Reflect all origins for now to solve preflight once and for all
+
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.warn(`Blocked by CORS: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -226,7 +232,9 @@ app.post('/api/tasks', authenticate, async (req, res) => {
             return res.status(400).json({ error: 'Missing task data or payment method.' });
         }
 
-        const { title, description, location, fee, duration, appCommission, vatRate, totalFee } = taskData;
+        const title = sanitizeString(taskData.title);
+        const description = sanitizeString(taskData.description);
+        const { location, fee, duration, appCommission, vatRate, totalFee } = taskData;
 
         // Use totalFee for fee limit check
         const finalAmountToCheck = totalFee || fee;
@@ -248,10 +256,42 @@ app.post('/api/tasks', authenticate, async (req, res) => {
             return res.status(400).json({ error: 'Invalid payment method.' });
         }
 
-        // Sanitize strings
         const sanitizedTitle = sanitizeString(title);
         const sanitizedDescription = sanitizeString(description);
         const sanitizedAddress = sanitizeString(location.address);
+
+        let finalIsPaid = false;
+        const appComm = appCommission || (fee * 0.05);
+        const vat = vatRate || 0.15;
+        const total = totalFee || (fee * (1 + 0.05) * (1 + 0.15));
+
+        // CRITICAL: Financial transaction logic
+        if (paymentMethod === 'Pre-Paid') {
+            const userRef = db.collection('users').doc(uid);
+
+            await db.runTransaction(async (transaction) => {
+                const userDoc = await transaction.get(userRef);
+                if (!userDoc.exists) throw new Error('User not found.');
+
+                // If the client says it's already paid, we assume the verification happened 
+                // in a separate step (like the Yoco return handler). 
+                // In this case, we trust the client ONLY because the server-side verify-checkout 
+                // already added the funds to the wallet. We still deduct it here to fulfill the task.
+
+                const currentBalance = userDoc.data().balance || 0;
+                // Rounding to avoid floating point issues during comparison
+                const roundedBalance = Math.round(currentBalance * 100) / 100;
+                const roundedTotal = Math.round(total * 100) / 100;
+
+                if (roundedBalance < roundedTotal) {
+                    throw new Error(`Insufficient balance. You need R${roundedTotal.toFixed(2)} but have R${roundedBalance.toFixed(2)}.`);
+                }
+
+                // Deduct balance immediately upon task creation for Pre-Paid
+                transaction.update(userRef, { balance: Math.max(0, Math.round((currentBalance - total) * 100) / 100) });
+                finalIsPaid = true;
+            });
+        }
 
         const newTaskPayload = {
             title: sanitizedTitle,
@@ -262,15 +302,15 @@ app.post('/api/tasks', authenticate, async (req, res) => {
                 lng: location.lng,
             },
             fee,
-            appCommission: appCommission || (fee * 0.05),
-            vatRate: vatRate || 0.15,
-            totalFee: totalFee || (fee * 1.05 * 1.15),
+            appCommission: appComm,
+            vatRate: vat,
+            totalFee: total,
             duration,
             requesterId: uid,
             createdAt: Date.now(),
             status: 'Open',
             paymentMethod: paymentMethod,
-            isPaid: isPaid || false,
+            isPaid: finalIsPaid,
             marshalId: null,
             requesterRated: false,
             marshalRated: false,
@@ -383,33 +423,27 @@ app.post('/api/tasks/:taskId/complete', authenticate, async (req, res) => {
 
             // Payment logic for Pre-Paid tasks
             if (taskData.paymentMethod === 'Pre-Paid') {
-                const requesterRef = db.collection('users').doc(taskData.requesterId);
                 const marshalRef = db.collection('users').doc(taskData.marshalId);
+                const marshalDoc = await transaction.get(marshalRef);
 
-                const [requesterDoc, marshalDoc] = await Promise.all([
-                    transaction.get(requesterRef),
-                    transaction.get(marshalRef)
-                ]);
-
-                if (!requesterDoc.exists || !marshalDoc.exists) {
-                    throw new Error('Requester or marshal account not found.');
+                if (!marshalDoc.exists) {
+                    throw new Error('Marshal account not found.');
                 }
 
-                const requesterData = requesterDoc.data();
-                const marshalData = marshalDoc.data();
-                const baseFee = taskData.fee;
-                const totalDeductionVal = taskData.totalFee || (baseFee * 1.05 * 1.15);
-                const marshalPayout = baseFee;
-
-                // Only deduct from requester balance if it hasn't been paid yet (e.g. internal balance tasks)
                 if (!taskData.isPaid) {
-                    if (requesterData.balance < totalDeductionVal) {
-                        throw new Error('Requester has insufficient funds for the task and fees.');
+                    const requesterRef = db.collection('users').doc(taskData.requesterId);
+                    const requesterDoc = await transaction.get(requesterRef);
+                    if (!requesterDoc.exists) throw new Error('Requester account not found.');
+
+                    const totalDeductionVal = taskData.totalFee || (taskData.fee * 1.05 * 1.15);
+                    if (requesterDoc.data().balance < totalDeductionVal) {
+                        throw new Error('Requester has insufficient funds.');
                     }
-                    transaction.update(requesterRef, { balance: requesterData.balance - totalDeductionVal });
+                    transaction.update(requesterRef, { balance: requesterDoc.data().balance - totalDeductionVal });
                 }
 
-                transaction.update(marshalRef, { balance: marshalData.balance + marshalPayout });
+                const marshalPayout = taskData.fee;
+                transaction.update(marshalRef, { balance: (marshalDoc.data().balance || 0) + marshalPayout });
             }
 
             transaction.update(taskRef, { status: 'Completed' });
@@ -586,20 +620,20 @@ app.get('/api/admin/marshals', authenticate, requireAdmin, async (req, res) => {
     }
 });
 
-// Verify/Reject a marshal (Admin only)
-app.post('/api/admin/verify-marshal', authenticate, requireAdmin, async (req, res) => {
+// Verify/Reject a user (Admin only) - supports both marshals and requesters
+app.post('/api/admin/verify-user', authenticate, requireAdmin, async (req, res) => {
     try {
-        const { marshalId, status } = req.body;
+        const { userId, status } = req.body;
 
-        if (!marshalId || !['verified', 'rejected', 'pending'].includes(status)) {
-            return res.status(400).json({ error: 'Invalid marshalId or status.' });
+        if (!userId || !['verified', 'rejected', 'pending'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid userId or status.' });
         }
 
-        const marshalRef = db.collection('users').doc(marshalId);
-        const marshalDoc = await marshalRef.get();
+        const userRef = db.collection('users').doc(userId);
+        const userDoc = await userRef.get();
 
-        if (!marshalDoc.exists || marshalDoc.data().role !== 'marshal') {
-            return res.status(404).json({ error: 'Marshal not found.' });
+        if (!userDoc.exists) {
+            return res.status(404).json({ error: 'User not found.' });
         }
 
         const updateData = {
@@ -607,21 +641,32 @@ app.post('/api/admin/verify-marshal', authenticate, requireAdmin, async (req, re
             verifiedAt: status === 'verified' ? Date.now() : null,
         };
 
-        await marshalRef.update(updateData);
+        await userRef.update(updateData);
 
         // Audit log
         await db.collection('audit_log').add({
-            action: `marshal_${status}`,
+            action: `user_verification_${status}`,
             adminId: req.user.uid,
-            marshalId,
+            targetUserId: userId,
             timestamp: Date.now(),
         });
 
-        res.status(200).json({ success: true, message: `Marshal ${status} successfully.` });
+        res.status(200).json({ success: true, message: `User ${status} successfully.` });
     } catch (error) {
-        console.error('Error verifying marshal:', error);
+        console.error('Error verifying user:', error);
         res.status(500).json({ error: 'Internal server error.' });
     }
+});
+
+// Alias routes for backward compatibility with frontend calls
+app.post('/api/admin/verify-marshal', (req, res, next) => { req.route_alias = 'marshal'; next(); }, authenticate, requireAdmin, async (req, res) => {
+    // Redirect to the generic verify-user logic
+    return app._router.handle({ method: 'post', url: '/api/admin/verify-user', body: req.body }, req, res);
+});
+
+app.post('/api/admin/verify-requester', (req, res, next) => { req.route_alias = 'requester'; next(); }, authenticate, requireAdmin, async (req, res) => {
+    // Redirect to the generic verify-user logic
+    return app._router.handle({ method: 'post', url: '/api/admin/verify-user', body: req.body }, req, res);
 });
 
 // Get audit log (Admin only)
@@ -648,8 +693,15 @@ const YOCO_SECRET_KEY = process.env.YOCO_SECRET_KEY;
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
 
+// Stricter rate limit for payment operations
+const paymentLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 10,
+    message: { error: 'Too many payment attempts. Please wait an hour.' },
+});
+
 // 1. YOCO Payment Integration (New API)
-app.post('/api/payments/yoco/create-checkout', authenticate, async (req, res) => {
+app.post('/api/payments/yoco/create-checkout', authenticate, paymentLimiter, async (req, res) => {
     try {
         const { amountInCents, currency = 'ZAR', successUrl, cancelUrl } = req.body;
         const { uid } = req.user;
@@ -711,7 +763,7 @@ app.post('/api/payments/yoco/verify-checkout', authenticate, async (req, res) =>
 
         const checkoutData = response.data;
 
-        if (checkoutData.status === 'paid') {
+        if (checkoutData.status === 'paid' || checkoutData.status === 'completed' || checkoutData.status === 'successful') {
             // Check if already processed
             const auditSnapshot = await db.collection('audit_log')
                 .where('yocoId', '==', checkoutId)
@@ -837,8 +889,8 @@ app.post('/api/payments/paypal/capture-order', authenticate, async (req, res) =>
 // === ENCRYPTION ENDPOINTS (for sensitive user data) === //
 
 
-// Encrypt sensitive user data on registration
-app.post('/api/secure/encrypt-user-data', authenticate, async (req, res) => {
+// Encrect sensitive user data on registration (Heavy operation, rate limit)
+app.post('/api/secure/encrypt-user-data', authenticate, authLimiter, async (req, res) => {
     try {
         const { idNumber, bankAccount } = req.body;
         const encryptedData = {};
@@ -865,7 +917,7 @@ app.post('/api/secure/encrypt-user-data', authenticate, async (req, res) => {
 // --- NOTIFICATION ROUTES --- //
 
 // Endpoint for client to trigger a chat notification
-app.post('/api/notifications/chat', authenticate, async (req, res) => {
+app.post('/api/notifications/chat', authenticate, rateLimit({ windowMs: 1 * 60 * 1000, max: 20 }), async (req, res) => {
     try {
         const { taskId, recipientId, messageSnippet } = req.body;
         const senderName = req.user.name || 'User';

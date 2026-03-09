@@ -48,7 +48,7 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
     const total = fee + appFee + vat;
 
     setCommission(appFee + vat); // Use commission state to store total extra fees for simplicity or separate them
-    setTotalAmount(total);
+    setTotalAmount(Math.round(total * 100) / 100);
   }, [taskDetails.fee]);
 
   useEffect(() => {

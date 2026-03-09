@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // --- Users Collection ---
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      
+      // Prevent users from setting themselves as admin or changing their balance
+      // Special exception for the bootstrap admin email
+      allow create: if isAuthenticated() && isOwner(userId) && 
+                    (
+                      (!request.resource.data.diff(request.resource.data).affectedKeys().hasAny(['isAdmin', 'balance']) || 
+                       (request.resource.data.isAdmin == false && request.resource.data.balance == 0)) ||
+                      (request.auth.token.email.lower() == 'nabstertsr@gmail.com' && request.resource.data.isAdmin == true)
+                    );
+                     
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin()) && 
+                    !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin', 'balance']);
+    }
+
+    // --- Tasks Collection ---
+    match /tasks/{taskId} {
+      // Anyone authenticated can read open tasks
+      allow read: if isAuthenticated();
+      
+      // Creating tasks should ideally be verified by server, but if allowed here:
+      allow create: if isAuthenticated();
+      
+      // Updates to tasks (accepting, completing) should ideally go through the Express API
+      // to ensure balance logic is handled securely. We restrict direct writes here.
+      allow update, delete: if isAuthenticated() && (resource.data.requesterId == request.auth.uid || isAdmin());
+    }
+
+    // --- Ratings Collection ---
+    match /ratings/{ratingId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated(); // Should be validated by server
+    }
+
+    // --- Audit Logs Collection ---
+    match /audit_log/{logId} {
+      // Audit logs are read-only for Admins, and only written by the Server
+      allow read: if isAuthenticated() && isAdmin();
+      allow write: if false; // Only Admin SDK (Server) can write
+    }
+    
+    // --- Messages Collection (if exists) ---
+    match /messages/{messageId} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}
