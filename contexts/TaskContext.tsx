@@ -89,28 +89,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('API Task Creation Success:', newTask.id);
       return newTask as Task;
     } catch (error: any) {
-      console.error('API Task Creation Failed, trying Fallback:', error.message);
-
-      // Fallback: create directly in Firestore for development
-      const currentUser = auth.currentUser;
-      if (!currentUser) throw new Error('Not authenticated.');
-
-      console.log('--- addTask Firestore Fallback ---');
-      const newTaskPayload = {
-        ...taskData,
-        requesterId: currentUser.uid,
-        createdAt: Date.now(),
-        status: TaskStatus.OPEN,
-        paymentMethod: paymentMethod,
-        isPaid: isPaid,
-        marshalId: null,
-        requesterRated: false,
-        marshalRated: false,
-      };
-
-      const docRef = await db.collection('tasks').add(newTaskPayload);
-      console.log('Fallback Task Creation Success:', docRef.id);
-      return { id: docRef.id, ...newTaskPayload } as unknown as Task;
+      console.error('Task Creation Error:', error.message);
+      throw error;
     }
   };
 

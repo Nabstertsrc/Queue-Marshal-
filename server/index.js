@@ -261,9 +261,9 @@ app.post('/api/tasks', authenticate, async (req, res) => {
         const sanitizedAddress = sanitizeString(location.address);
 
         let finalIsPaid = false;
-        const appComm = appCommission || (fee * 0.05);
+        const appComm = Math.round((appCommission || (fee * 0.05)) * 100) / 100;
         const vat = vatRate || 0.15;
-        const total = totalFee || (fee * (1 + 0.05) * (1 + 0.15));
+        const total = Math.round((totalFee || (fee * (1 + 0.05) * (1 + 0.15))) * 100) / 100;
 
         // CRITICAL: Financial transaction logic
         if (paymentMethod === 'Pre-Paid') {
@@ -434,16 +434,26 @@ app.post('/api/tasks/:taskId/complete', authenticate, async (req, res) => {
                     throw new Error('Marshal account not found.');
                 }
 
-                if (!taskData.isPaid) {
+                // If isPaid is NOT true, it means there was a system error during creation 
+                // (e.g. Firestore fallback was used in an older version of the app).
+                if (taskData.isPaid !== true) {
                     const requesterRef = db.collection('users').doc(taskData.requesterId);
                     const requesterDoc = await transaction.get(requesterRef);
-                    if (!requesterDoc.exists) throw new Error('Requester account not found.');
 
-                    const totalDeductionVal = taskData.totalFee || (taskData.fee * 1.05 * 1.15);
-                    if (requesterDoc.data().balance < totalDeductionVal) {
-                        throw new Error('Requester has insufficient funds.');
+                    if (requesterDoc.exists) {
+                        const totalDeductionVal = taskData.totalFee || (taskData.fee * 1.05 * 1.15);
+                        const currentBalance = requesterDoc.data().balance || 0;
+
+                        if (currentBalance >= totalDeductionVal) {
+                            // Try to recover the funds from the requester now
+                            console.log(`Recovering funds (R${totalDeductionVal}) for Pre-Paid task ${taskId} from requester ${taskData.requesterId}`);
+                            transaction.update(requesterRef, { balance: Math.round((currentBalance - totalDeductionVal) * 100) / 100 });
+                        } else {
+                            // If they have no money, we log a critical error but we STILL want to pay the marshal.
+                            // The system takes the loss due to the historical creation bug.
+                            console.error(`CRITICAL DATA INCONSISTENCY: Pre-Paid task ${taskId} is unpaid and requester ${taskData.requesterId} has insufficient funds (Balance: R${currentBalance}). System loss incurred to pay marshal.`);
+                        }
                     }
-                    transaction.update(requesterRef, { balance: requesterDoc.data().balance - totalDeductionVal });
                 }
 
                 const marshalPayout = taskData.fee;
