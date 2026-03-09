@@ -58,25 +58,6 @@ const Header: React.FC = () => {
               <Link to="/dashboard" className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive('/dashboard') ? 'text-white bg-dark-600' : 'text-dark-200 hover:text-white hover:bg-dark-700'}`}>
                 Dashboard
               </Link>
-              <button
-                onClick={() => setHowToOpen(true)}
-                className="px-3 py-2 rounded-lg text-sm font-medium text-dark-200 hover:text-white hover:bg-dark-700 transition-all duration-200 flex items-center space-x-1"
-              >
-                <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <span>How it Works</span>
-              </button>
-              <Link to="/faq" className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-1 ${isActive('/faq') ? 'text-white bg-dark-600' : 'text-dark-200 hover:text-white hover:bg-dark-700'}`}>
-                <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <span>FAQ</span>
-              </Link>
-              {user?.isAdmin && (
-                <Link to="/admin" className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive('/admin') ? 'text-white bg-dark-600' : 'text-dark-200 hover:text-white hover:bg-dark-700'}`}>
-                  <span className="flex items-center space-x-1.5">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                    <span>Admin</span>
-                  </span>
-                </Link>
-              )}
             </nav>
           </div>
 
@@ -156,12 +137,7 @@ const Header: React.FC = () => {
                     <Link to="/dashboard" onClick={() => setDropdownOpen(false)} className="flex items-center px-4 py-2.5 text-sm text-dark-100 hover:bg-dark-700 transition-colors">
                       <UserIcon className="mr-3 h-4 w-4 text-dark-300" />Profile
                     </Link>
-                    {user?.isAdmin && (
-                      <Link to="/admin" onClick={() => setDropdownOpen(false)} className="flex items-center px-4 py-2.5 text-sm text-dark-100 hover:bg-dark-700 transition-colors">
-                        <svg className="mr-3 h-4 w-4 text-dark-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                        Admin Panel
-                      </Link>
-                    )}
+                    {/* Admin removed */}
                     {isAndroid && (
                       <a href="/queue-marshal.apk" download className="flex items-center px-4 py-2.5 text-sm text-primary hover:bg-dark-700 transition-colors">
                         <svg className="mr-3 h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -193,20 +169,6 @@ const Header: React.FC = () => {
             <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${isActive('/dashboard') ? 'text-white bg-dark-600' : 'text-dark-200'}`}>
               Dashboard
             </Link>
-            <button
-              onClick={() => { setHowToOpen(true); setMobileMenuOpen(false); }}
-              className="w-full text-left block px-3 py-2.5 rounded-lg text-sm font-medium text-dark-200 hover:text-white hover:bg-dark-700 transition-all font-bold"
-            >
-              How it Works
-            </button>
-            <Link to="/faq" onClick={() => setMobileMenuOpen(false)} className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${isActive('/faq') ? 'text-white bg-dark-600' : 'text-dark-200'}`}>
-              FAQ
-            </Link>
-            {user?.isAdmin && (
-              <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${isActive('/admin') ? 'text-white bg-dark-600' : 'text-dark-200'}`}>
-                Admin Panel
-              </Link>
-            )}
             {isAndroid && (
               <a href="/queue-marshal.apk" download className="block px-3 py-2.5 rounded-lg text-sm font-bold text-primary bg-primary/10 transition-all border border-primary/20">
                 <span className="flex items-center">
