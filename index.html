@@ -44,6 +44,23 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script type="module" src="index.tsx"></script>
+  <script>
+    // Sync favicon with theme
+    const updateFavicon = () => {
+      const theme = localStorage.getItem('qm-theme') || 'default';
+      const favicon = document.querySelector('link[rel="icon"]');
+      if (favicon) {
+        favicon.href = theme === 'light' ? 'logo-light.png' : 'logo.jpg';
+      }
+    };
+    // Check on load
+    updateFavicon();
+    // Listen for storage changes (for theme toggle)
+    window.addEventListener('storage', updateFavicon);
+    // Observe DOM for attribute changes as well (since ThemeContext updates documentElement)
+    const observer = new MutationObserver(updateFavicon);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  </script>
 </body>
 
 </html>

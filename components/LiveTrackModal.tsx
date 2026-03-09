@@ -100,7 +100,7 @@ const LiveTrackModal: React.FC<LiveTrackModalProps> = ({ task, onClose }) => {
       },
     });
 
-    const unsubscribe = db.collection('users').doc(task.marshalId).onSnapshot((doc) => {
+    const unsubscribe = db.collection('users').doc(task.marshalId).onSnapshot((doc: any) => {
       const marshalData = doc.data() as User;
       if (marshalData?.location) {
         const newPosition = marshalData.location;

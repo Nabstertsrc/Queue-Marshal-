@@ -55,7 +55,12 @@ const Main: React.FC = () => {
   return (
     <div className={`flex flex-col ${isContentPage ? 'min-h-screen overflow-y-auto' : 'h-screen overflow-hidden'} ${isAuthPage ? 'bg-transparent' : 'bg-dark-900 bg-app-gradient'}`}>
       {isAuthenticated && <Header />}
-      {isAuthenticated && <PushNotificationManager />}
+      {/* 
+         TODO: Uncomment PushNotificationManager once google-services.json 
+         is added to the android/app/ directory, otherwise it causes a native crash 
+         on sign-in on Android devices!
+      */}
+      {/* {isAuthenticated && <PushNotificationManager />} */}
       <Routes>
         <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/" />} />
         <Route path="/register" element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/" />} />
