@@ -331,9 +331,13 @@ app.post('/api/tasks', authenticate, async (req, res) => {
 
     } catch (error) {
         console.error('Error creating task:', error);
-        res.status(500).json({ error: 'Internal server error.' });
+        if (error.message && (error.message.includes('Insufficient balance') || error.message.includes('User not found'))) {
+            return res.status(400).json({ error: error.message });
+        }
+        res.status(500).json({ error: error.message || 'Internal server error.' });
     }
 });
+
 
 // Accept a task (Protected; marshal must be verified)
 app.post('/api/tasks/:taskId/accept', authenticate, async (req, res) => {
