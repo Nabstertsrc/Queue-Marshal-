@@ -148,6 +148,7 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
 
       const data = await response.json();
       console.log('Checkout API Response:', data);
+
       if (data.success && data.redirectUrl) {
         // Save checkout ID and task details to verify when they return
         sessionStorage.setItem('pendingYocoTaskCheckout', data.checkoutId);
@@ -165,7 +166,9 @@ const RequestModal: React.FC<RequestModalProps> = ({ onClose }) => {
         // Redirect user to Yoco's hosted payment page
         window.location.href = data.redirectUrl;
       } else {
-        setPaymentError("Failed to initiate Yoco payment: " + (data.error || "Unknown error"));
+        const errorMsg = data.error || data.message || "Unknown error";
+        console.error('Yoco Initiation Failed:', errorMsg, data.details);
+        setPaymentError("Payment Failed: " + errorMsg);
         setStep('error');
         setLoading(false);
       }

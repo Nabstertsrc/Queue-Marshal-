@@ -705,23 +705,35 @@ app.post('/api/payments/yoco/create-checkout', authenticate, paymentLimiter, asy
         const { amountInCents, currency = 'ZAR', successUrl, cancelUrl } = req.body;
         const { uid } = req.user;
 
-        if (!amountInCents) {
-            return res.status(400).json({ error: 'Missing amount.' });
+        if (!amountInCents || amountInCents < 100) {
+            return res.status(400).json({ error: 'Missing or invalid amount. Minimum R1.00 (100 cents) required.' });
         }
 
+        // Diagnostic: Check if secret key looks valid (internal log)
+        const secretKey = (process.env.YOCO_SECRET_KEY || '').trim();
+        if (!secretKey || secretKey.length < 10) {
+            console.error('CRITICAL: YOCO_SECRET_KEY is missing or too short.');
+            return res.status(500).json({ error: 'Payment gateway configuration error.' });
+        }
+
+        const payload = {
+            amount: amountInCents,
+            currency,
+            successUrl: successUrl || 'https://profilegenius.fun/#/payment?yoco_success=true',
+            cancelUrl: cancelUrl || 'https://profilegenius.fun/#/payment',
+            metadata: { userId: uid }
+        };
+
+        console.log(`Initiating Yoco Checkout: ${amountInCents} ${currency} for user ${uid}`);
+
         const response = await axios.post('https://payments.yoco.com/api/checkouts',
-            {
-                amount: amountInCents,
-                currency,
-                successUrl: successUrl || 'https://profilegenius.fun/#/payment?yoco_success=true',
-                cancelUrl: cancelUrl || 'https://profilegenius.fun/#/payment',
-                metadata: { userId: uid }
-            },
+            payload,
             {
                 headers: {
-                    'Authorization': `Bearer ${YOCO_SECRET_KEY}`,
+                    'Authorization': `Bearer ${secretKey}`,
                     'Content-Type': 'application/json'
-                }
+                },
+                timeout: 10000 // 10s timeout
             }
         );
 
@@ -732,14 +744,22 @@ app.post('/api/payments/yoco/create-checkout', authenticate, paymentLimiter, asy
                 checkoutId: response.data.id
             });
         } else {
+            console.error('Yoco Unexpected Response:', response.data);
             return res.status(400).json({ error: 'Failed to create Yoco checkout.', details: response.data });
         }
     } catch (error) {
-        console.error('Yoco API Error:', error.response?.data || error.message);
-        const errorMessage = error.response?.data?.displayMessage || error.response?.data?.message || 'Payment gateway error.';
-        res.status(error.response?.status || 500).json({
+        const status = error.response?.status || 500;
+        const errorData = error.response?.data;
+
+        console.error(`Yoco API Error (${status}):`, errorData || error.message);
+
+        // Extract the best message possible
+        const errorMessage = errorData?.displayMessage || errorData?.message || 'Payment gateway error.';
+
+        res.status(status).json({
             error: errorMessage,
-            details: error.response?.data || error.message
+            details: errorData,
+            code: errorData?.errorCode || null
         });
     }
 });

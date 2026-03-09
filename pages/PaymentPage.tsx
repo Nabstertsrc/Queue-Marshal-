@@ -82,7 +82,9 @@ const PaymentPage: React.FC = () => {
                 // Redirect user to Yoco's hosted payment page
                 window.location.href = data.redirectUrl;
             } else {
-                alert("Failed to initiate Yoco payment: " + (data.error || "Unknown error"));
+                const errorMsg = data.error || data.message || "Unknown error";
+                console.error('Yoco Initiation Failed:', errorMsg, data.details);
+                alert("Failed to initiate Yoco payment: " + errorMsg);
                 setLoading(false);
             }
         } catch (error) {
