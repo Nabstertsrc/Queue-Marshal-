@@ -1,11 +1,38 @@
 const express = require('express');
 const cors = require('cors');
+const nodemailer = require('nodemailer');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const axios = require('axios');
 require('dotenv').config();
+
+// --- Email Configuration ---
+const transporter = nodemailer.createTransport({
+    service: process.env.EMAIL_SERVICE || 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
+
+async function sendEmail(to, subject, text, html) {
+    try {
+        const info = await transporter.sendMail({
+            from: `"Queue Marshal" <${process.env.EMAIL_USER}>`,
+            to,
+            subject,
+            text,
+            html
+        });
+        console.log('Email sent: %s', info.messageId);
+        return info;
+    } catch (error) {
+        console.error('Error sending email:', error);
+        // Don't throw, just log. This shouldn't crash the withdrawal process if it fails but we should know.
+    }
+}
 
 // --- Firebase Admin SDK Initialization ---
 if (process.env.FIREBASE_SERVICE_ACCOUNT) {
@@ -911,6 +938,94 @@ app.post('/api/payments/paypal/capture-order', authenticate, async (req, res) =>
     } catch (error) {
         console.error('PayPal Capture Error:', error.response?.data || error.message);
         res.status(500).json({ error: 'Could not capture PayPal order.' });
+    }
+});
+
+// 3. WITHDRAWAL Integration
+const WITHDRAWAL_THRESHOLD = process.env.MIN_WITHDRAWAL_THRESHOLD || 100;
+
+app.post('/api/payments/withdraw', authenticate, async (req, res) => {
+    try {
+        const { uid } = req.user;
+        const userRef = db.collection('users').doc(uid);
+        const userDoc = await userRef.get();
+
+        if (!userDoc.exists) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        const userData = userDoc.data();
+
+        // 1. Check if user is a marshal
+        if (userData.role !== 'marshal') {
+            return res.status(403).json({ error: 'Only Marshals can request withdrawals.' });
+        }
+
+        // 2. Check banking details
+        if (!userData.bankName || !userData.accountNumber) {
+            return res.status(400).json({ error: 'Banking details missing. Please update your profile with bank name and account number.' });
+        }
+
+        // 3. Check balance threshold
+        const balance = userData.balance || 0;
+        if (balance < WITHDRAWAL_THRESHOLD) {
+            return res.status(400).json({ error: `Minimum withdrawal threshold is R${WITHDRAWAL_THRESHOLD}. Your current balance is R${balance.toFixed(2)}.` });
+        }
+
+        // 4. Process withdrawal (Clear balance)
+        const amountToWithdraw = balance;
+
+        await db.runTransaction(async (transaction) => {
+            transaction.update(userRef, { balance: 0 });
+        });
+
+        // 5. Send email to admin
+        const adminEmail = ADMIN_EMAIL;
+        const subject = `Withdrawal Request: R${amountToWithdraw.toFixed(2)} - ${userData.name} ${userData.surname}`;
+        const emailText = `
+            New Withdrawal Request:
+            -----------------------
+            Marshal: ${userData.name} ${userData.surname}
+            Email: ${userData.email}
+            Amount: R${amountToWithdraw.toFixed(2)}
+            
+            Banking Details:
+            Bank: ${userData.bankName}
+            Account Number: ${userData.accountNumber}
+            
+            Please process this withdrawal and update the records.
+        `;
+        const emailHtml = `
+            <h3>New Withdrawal Request</h3>
+            <p><strong>Marshal:</strong> ${userData.name} ${userData.surname}</p>
+            <p><strong>Email:</strong> ${userData.email}</p>
+            <p><strong>Amount:</strong> R${amountToWithdraw.toFixed(2)}</p>
+            <hr />
+            <h4>Banking Details:</h4>
+            <p><strong>Bank:</strong> ${userData.bankName}</p>
+            <p><strong>Account Number:</strong> ${userData.accountNumber}</p>
+            <p><em>Please process this withdrawal and update the records manually.</em></p>
+        `;
+
+        await sendEmail(adminEmail, subject, emailText, emailHtml);
+
+        // 6. Log completion
+        await db.collection('audit_log').add({
+            action: 'withdrawal_request',
+            userId: uid,
+            amount: amountToWithdraw,
+            timestamp: Date.now(),
+            details: {
+                bankName: userData.bankName,
+                accountNumber: userData.accountNumber
+            }
+        });
+
+        res.json({ success: true, message: `Withdrawal request for R${amountToWithdraw.toFixed(2)} submitted successfully.`, amount: amountToWithdraw });
+
+    } catch (error) {
+        console.error('Withdrawal Error:', error.message);
+        res.status(500).json({ error: 'Failed to process withdrawal request.' });
     }
 });
 

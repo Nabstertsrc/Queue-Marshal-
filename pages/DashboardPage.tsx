@@ -17,7 +17,7 @@ const DashboardPage: React.FC = () => {
     const [ratingTask, setRatingTask] = useState<Task | null>(null);
     const [trackingTask, setTrackingTask] = useState<Task | null>(null);
     const [updating, setUpdating] = useState(false);
-    const { user, updateUser } = useAuth();
+    const { user, updateUser, token } = useAuth();
     const { getTasksByRequester, getTasksByMarshal, completeTask } = useTasks();
 
     if (!user) return null;
@@ -109,6 +109,51 @@ const DashboardPage: React.FC = () => {
             }
         }
     }
+
+    const handleWithdrawal = async () => {
+        if (!user || user.role !== UserRole.MARSHAL) return;
+
+        if (!user.bankName || !user.accountNumber) {
+            alert('Please add your banking details before requesting a withdrawal.');
+            setActiveTab('banking');
+            return;
+        }
+
+        if (user.balance < 100) {
+            alert('Minimum withdrawal threshold is R100.00');
+            return;
+        }
+
+        if (!window.confirm(`Are you sure you want to withdraw R${user.balance.toFixed(2)}? This will be sent to your bank account on file.`)) {
+            return;
+        }
+
+        setUpdating(true);
+        try {
+            const apiUrl = import.meta.env.VITE_API_URL || 'https://queue-marshal-server-production.up.railway.app';
+            const response = await fetch(`${apiUrl}/api/payments/withdraw`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(data.message || 'Withdrawal request submitted successfully!');
+                // Update local user state
+                updateUser({ ...user, balance: 0 });
+            } else {
+                alert(data.error || 'Withdrawal failed. Please try again.');
+            }
+        } catch (error: any) {
+            alert('Error: ' + (error.message || 'Network error connecting to payment server.'));
+        } finally {
+            setUpdating(false);
+        }
+    };
 
     const inputClasses = "w-full px-4 py-3 bg-dark-700 border border-dark-500 rounded-xl text-white placeholder-dark-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 text-sm";
 
@@ -227,8 +272,11 @@ const DashboardPage: React.FC = () => {
                                 <Link to="/payment" className="px-5 py-2 bg-primary text-dark-900 text-sm font-semibold rounded-xl hover:bg-primary-400 transition-all shadow-lg shadow-primary/20">
                                     Top Up Wallet
                                 </Link>
-                                <button className="px-5 py-2 bg-dark-600 text-white text-sm font-semibold rounded-xl hover:bg-dark-500 transition-all">
-                                    Withdraw Funds
+                                <button
+                                    onClick={handleWithdrawal}
+                                    disabled={updating || user.balance < 100}
+                                    className="px-5 py-2 bg-dark-600 text-white text-sm font-semibold rounded-xl hover:bg-dark-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                    {updating ? 'Processing...' : 'Withdraw Funds'}
                                 </button>
                             </div>
                         </div>

@@ -1,7 +1,9 @@
 import React, { useRef, useEffect } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 
 const AnimatedBackground: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const { theme } = useTheme();
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -14,6 +16,9 @@ const AnimatedBackground: React.FC = () => {
 
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+
+        const isLight = theme === 'light';
+        const baseColor = isLight ? '0, 0, 0' : '255, 255, 255';
 
         class Particle {
             x: number;
@@ -36,7 +41,7 @@ const AnimatedBackground: React.FC = () => {
                 if (!ctx) return;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.fillStyle = `rgba(${baseColor}, ${this.opacity})`;
                 ctx.fill();
             }
 
@@ -70,7 +75,7 @@ const AnimatedBackground: React.FC = () => {
 
                     if (distance < 100) {
                         const opacityValue = (1 - (distance / 100)) * 0.15;
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${opacityValue})`;
+                        ctx.strokeStyle = `rgba(${baseColor}, ${opacityValue})`;
                         ctx.lineWidth = 0.5;
                         ctx.beginPath();
                         ctx.moveTo(particles[a].x, particles[a].y);
@@ -108,9 +113,12 @@ const AnimatedBackground: React.FC = () => {
             cancelAnimationFrame(animationFrameId);
             window.removeEventListener('resize', handleResize);
         };
-    }, []);
+    }, [theme]); // Re-run effect when theme changes to update baseColor
 
-    return <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, zIndex: -1, background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%)' }} />;
+    const darkGradient = 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%)';
+    const lightGradient = 'linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 50%, #d0d0d0 100%)';
+
+    return <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, zIndex: -1, background: theme === 'light' ? lightGradient : darkGradient }} />;
 };
 
 export default AnimatedBackground;

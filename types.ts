@@ -32,6 +32,8 @@ export interface User {
   location?: { lat: number; lng: number };
   idDocumentUrl?: string;
   bankDetailsUrl?: string;
+  bankName?: string;
+  accountNumber?: string;
   balance: number;
   averageRating?: number;
   ratingCount?: number;
