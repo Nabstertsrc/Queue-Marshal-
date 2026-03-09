@@ -7,15 +7,23 @@ declare global {
 }
 declare const firebase: any;
 
+// Helper to safely get and trim environment variables, falling back to known good keys
+const getValidKey = (envVar: string | undefined, fallback: string) => {
+  if (typeof envVar === 'string' && envVar.trim().length > 10 && !envVar.startsWith('%')) {
+    return envVar.trim();
+  }
+  return fallback;
+};
+
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDNadriwLBKFkXLBrORyFfog5g5SE0VC1w",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "queue-93413.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "queue-93413",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "queue-93413.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1077480569715",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1077480569715:web:fb000a0bc2fcb7009b2306",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-JM53CQQ17M"
+  apiKey: getValidKey(import.meta.env.VITE_FIREBASE_API_KEY, "AIzaSyDNadriwLBKFkXLBrORyFfog5g5SE0VC1w"),
+  authDomain: getValidKey(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN, "queue-93413.firebaseapp.com"),
+  projectId: getValidKey(import.meta.env.VITE_FIREBASE_PROJECT_ID, "queue-93413"),
+  storageBucket: getValidKey(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET, "queue-93413.firebasestorage.app"),
+  messagingSenderId: getValidKey(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID, "1077480569715"),
+  appId: getValidKey(import.meta.env.VITE_FIREBASE_APP_ID, "1:1077480569715:web:fb000a0bc2fcb7009b2306"),
+  measurementId: getValidKey(import.meta.env.VITE_FIREBASE_MEASUREMENT_ID, "G-JM53CQQ17M")
 };
 
 // Debug: Check if key is correctly reaching the app (masked for security)
