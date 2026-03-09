@@ -64,7 +64,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Admin email - only this email can have admin access
-const ADMIN_EMAIL = 'nabstertsr@gmail.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'nabstertsr@gmail.com';
 
 // --- Encryption Utilities ---
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex').slice(0, 64);
