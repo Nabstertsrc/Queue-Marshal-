@@ -81,7 +81,6 @@ const Map: React.FC<MapProps> = ({ tasks, onMarkerClick, selectedTaskId }) => {
                         center: { lat: -26.2041, lng: 28.0473 },
                         zoom: 11,
                         styles: darkMapStyles,
-                        mapId: 'DEMO_MAP_ID', // Required for AdvancedMarkerElement
                         disableDefaultUI: true,
                         zoomControl: true,
                         zoomControlOptions: {
@@ -130,16 +129,21 @@ const Map: React.FC<MapProps> = ({ tasks, onMarkerClick, selectedTaskId }) => {
             tasks.forEach(task => {
                 const isSelected = selectedTaskId === task.id;
 
-                // Create a container for the marker content
-                const content = document.createElement('div');
-                content.innerHTML = createCustomMarkerSvg(task.fee, isSelected);
+                // Create a data URI for the SVG icon
+                const svgString = createCustomMarkerSvg(task.fee, isSelected);
+                const iconUrl = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svgString);
 
-                // Use AdvancedMarkerElement for modern API support
-                const marker = new window.google.maps.marker.AdvancedMarkerElement({
+                // We must use the standard google.maps.Marker to support inline map styles.
+                // AdvancedMarkerElement strictly requires a mapId which unfortunately overrides inline styled arrays.
+                const marker = new window.google.maps.Marker({
                     position: task.location,
                     map: map,
                     title: task.title,
-                    content: content
+                    icon: {
+                        url: iconUrl,
+                        scaledSize: new window.google.maps.Size(48, 56),
+                        anchor: new window.google.maps.Point(24, 52)
+                    }
                 });
 
                 marker.addListener('click', () => {
