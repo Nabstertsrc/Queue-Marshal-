@@ -6,8 +6,10 @@ import App from './App';
 
 // Initialize the Google Maps loader as early as possible
 const loadGoogleMaps = () => {
-  const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  if (!key || key.startsWith('%')) {
+  const envKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const key = envKey && !envKey.startsWith('%') ? envKey : "AIzaSyAFB_Zx6Id5jvjPrQGahLb27ay0ge6K1_w";
+
+  if (!key) {
     console.error('Google Maps API Key missing or incorrectly formatted in environments.');
     return;
   }

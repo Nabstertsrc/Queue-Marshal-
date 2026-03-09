@@ -625,7 +625,7 @@ app.get('/api/admin/marshals', authenticate, requireAdmin, async (req, res) => {
 });
 
 // Verify/Reject a user (Admin only) - supports both marshals and requesters
-app.post('/api/admin/verify-user', authenticate, requireAdmin, async (req, res) => {
+const verifyUserHandler = async (req, res) => {
     try {
         const { userId, status } = req.body;
 
@@ -660,18 +660,13 @@ app.post('/api/admin/verify-user', authenticate, requireAdmin, async (req, res) 
         console.error('Error verifying user:', error);
         res.status(500).json({ error: 'Internal server error.' });
     }
-});
+};
+
+app.post('/api/admin/verify-user', authenticate, requireAdmin, verifyUserHandler);
 
 // Alias routes for backward compatibility with frontend calls
-app.post('/api/admin/verify-marshal', (req, res, next) => { req.route_alias = 'marshal'; next(); }, authenticate, requireAdmin, async (req, res) => {
-    // Redirect to the generic verify-user logic
-    return app._router.handle({ method: 'post', url: '/api/admin/verify-user', body: req.body }, req, res);
-});
-
-app.post('/api/admin/verify-requester', (req, res, next) => { req.route_alias = 'requester'; next(); }, authenticate, requireAdmin, async (req, res) => {
-    // Redirect to the generic verify-user logic
-    return app._router.handle({ method: 'post', url: '/api/admin/verify-user', body: req.body }, req, res);
-});
+app.post('/api/admin/verify-marshal', authenticate, requireAdmin, verifyUserHandler);
+app.post('/api/admin/verify-requester', authenticate, requireAdmin, verifyUserHandler);
 
 // Get audit log (Admin only)
 app.get('/api/admin/audit-log', authenticate, requireAdmin, async (req, res) => {
