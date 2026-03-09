@@ -21,65 +21,31 @@ jobs:
 
       - name: Create .env file 📝
         env:
-          VITE_FIREBASE_API_KEY_SEC: "${{ secrets.VITE_FIREBASE_API_KEY }}"
-          VITE_FIREBASE_API_KEY_VAR: "${{ vars.VITE_FIREBASE_API_KEY }}"
-          VITE_FIREBASE_AUTH_DOMAIN_SEC: "${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}"
-          VITE_FIREBASE_AUTH_DOMAIN_VAR: "${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}"
-          VITE_FIREBASE_PROJECT_ID_SEC: "${{ secrets.VITE_FIREBASE_PROJECT_ID }}"
-          VITE_FIREBASE_PROJECT_ID_VAR: "${{ vars.VITE_FIREBASE_PROJECT_ID }}"
-          VITE_FIREBASE_STORAGE_BUCKET_SEC: "${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}"
-          VITE_FIREBASE_STORAGE_BUCKET_VAR: "${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}"
-          VITE_FIREBASE_MESSAGING_SENDER_ID_SEC: "${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}"
-          VITE_FIREBASE_MESSAGING_SENDER_ID_VAR: "${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}"
-          VITE_FIREBASE_APP_ID_SEC: "${{ secrets.VITE_FIREBASE_APP_ID }}"
-          VITE_FIREBASE_APP_ID_VAR: "${{ vars.VITE_FIREBASE_APP_ID }}"
-          VITE_FIREBASE_MEASUREMENT_ID_SEC: "${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}"
-          VITE_FIREBASE_MEASUREMENT_ID_VAR: "${{ vars.VITE_FIREBASE_MEASUREMENT_ID }}"
-          VITE_GOOGLE_MAPS_API_KEY_SEC: "${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}"
-          VITE_GOOGLE_MAPS_API_KEY_VAR: "${{ vars.VITE_GOOGLE_MAPS_API_KEY }}"
-          VITE_API_URL_SEC: "${{ secrets.VITE_API_URL }}"
-          VITE_API_URL_VAR: "${{ vars.VITE_API_URL }}"
-          VITE_YOCO_PUBLIC_KEY_SEC: "${{ secrets.VITE_YOCO_PUBLIC_KEY }}"
-          VITE_YOCO_PUBLIC_KEY_VAR: "${{ vars.VITE_YOCO_PUBLIC_KEY }}"
-          VITE_PAYPAL_CLIENT_ID_SEC: "${{ secrets.VITE_PAYPAL_CLIENT_ID }}"
-          VITE_PAYPAL_CLIENT_ID_VAR: "${{ vars.VITE_PAYPAL_CLIENT_ID }}"
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY || vars.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN || vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID || vars.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET || vars.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID || vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID || vars.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID || vars.VITE_FIREBASE_MEASUREMENT_ID }}
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY || vars.VITE_GOOGLE_MAPS_API_KEY }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || vars.VITE_API_URL || 'https://queue-marshal-server-production.up.railway.app' }}
+          VITE_YOCO_PUBLIC_KEY: ${{ secrets.VITE_YOCO_PUBLIC_KEY || vars.VITE_YOCO_PUBLIC_KEY }}
+          VITE_PAYPAL_CLIENT_ID: ${{ secrets.VITE_PAYPAL_CLIENT_ID || vars.VITE_PAYPAL_CLIENT_ID }}
         run: |
-          # Create an empty .env file
-          touch .env
-          
-          # Function to add to .env if value exists
-          add_env() {
-            local name=$1
-            local secret_val="${2}"
-            local var_val="${3}"
-            
-            # Use secret first, then var
-            local val="${secret_val:-$var_val}"
-            
-            if [ -n "$val" ]; then
-              # Clean any accidental "KEY=" prefix if user pasted the whole line
-              if [[ "$val" == *"$name="* ]]; then
-                val=$(echo "$val" | sed "s/^$name=//")
-              fi
-              echo "$name=$val" >> .env
-              echo "✅ Added $name"
-            else
-              echo "⚠️ Missing $name (Skipped)"
-            fi
-          }
-
-          # Map every required variable using local env vars
-          add_env "VITE_FIREBASE_API_KEY" "$VITE_FIREBASE_API_KEY_SEC" "$VITE_FIREBASE_API_KEY_VAR"
-          add_env "VITE_FIREBASE_AUTH_DOMAIN" "$VITE_FIREBASE_AUTH_DOMAIN_SEC" "$VITE_FIREBASE_AUTH_DOMAIN_VAR"
-          add_env "VITE_FIREBASE_PROJECT_ID" "$VITE_FIREBASE_PROJECT_ID_SEC" "$VITE_FIREBASE_PROJECT_ID_VAR"
-          add_env "VITE_FIREBASE_STORAGE_BUCKET" "$VITE_FIREBASE_STORAGE_BUCKET_SEC" "$VITE_FIREBASE_STORAGE_BUCKET_VAR"
-          add_env "VITE_FIREBASE_MESSAGING_SENDER_ID" "$VITE_FIREBASE_MESSAGING_SENDER_ID_SEC" "$VITE_FIREBASE_MESSAGING_SENDER_ID_VAR"
-          add_env "VITE_FIREBASE_APP_ID" "$VITE_FIREBASE_APP_ID_SEC" "$VITE_FIREBASE_APP_ID_VAR"
-          add_env "VITE_FIREBASE_MEASUREMENT_ID" "$VITE_FIREBASE_MEASUREMENT_ID_SEC" "$VITE_FIREBASE_MEASUREMENT_ID_VAR"
-          add_env "VITE_GOOGLE_MAPS_API_KEY" "$VITE_GOOGLE_MAPS_API_KEY_SEC" "$VITE_GOOGLE_MAPS_API_KEY_VAR"
-          add_env "VITE_API_URL" "$VITE_API_URL_SEC" "$VITE_API_URL_VAR"
-          add_env "VITE_YOCO_PUBLIC_KEY" "$VITE_YOCO_PUBLIC_KEY_SEC" "$VITE_YOCO_PUBLIC_KEY_VAR"
-          add_env "VITE_PAYPAL_CLIENT_ID" "$VITE_PAYPAL_CLIENT_ID_SEC" "$VITE_PAYPAL_CLIENT_ID_VAR"
+          cat << EOF > .env
+          VITE_FIREBASE_API_KEY=$VITE_FIREBASE_API_KEY
+          VITE_FIREBASE_AUTH_DOMAIN=$VITE_FIREBASE_AUTH_DOMAIN
+          VITE_FIREBASE_PROJECT_ID=$VITE_FIREBASE_PROJECT_ID
+          VITE_FIREBASE_STORAGE_BUCKET=$VITE_FIREBASE_STORAGE_BUCKET
+          VITE_FIREBASE_MESSAGING_SENDER_ID=$VITE_FIREBASE_MESSAGING_SENDER_ID
+          VITE_FIREBASE_APP_ID=$VITE_FIREBASE_APP_ID
+          VITE_FIREBASE_MEASUREMENT_ID=$VITE_FIREBASE_MEASUREMENT_ID
+          VITE_GOOGLE_MAPS_API_KEY=$VITE_GOOGLE_MAPS_API_KEY
+          VITE_API_URL=$VITE_API_URL
+          VITE_YOCO_PUBLIC_KEY=$VITE_YOCO_PUBLIC_KEY
+          VITE_PAYPAL_CLIENT_ID=$VITE_PAYPAL_CLIENT_ID
+          EOF
 
       - name: CI Diagnostic 🔍
         run: |
