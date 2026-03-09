@@ -14,31 +14,31 @@ interface MapProps {
     selectedTaskId?: string | null;
 }
 
-// Uber/Bolt-style dark map theme
+// Queue Marshal style dark map theme matching site aesthetics
 const darkMapStyles = [
-    { elementType: "geometry", stylers: [{ color: "#1a1a1a" }] },
+    { elementType: "geometry", stylers: [{ color: "#0D0D0D" }] }, // dark-900
     { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
-    { elementType: "labels.text.fill", stylers: [{ color: "#6b6b6b" }] },
-    { elementType: "labels.text.stroke", stylers: [{ color: "#1a1a1a" }] },
+    { elementType: "labels.text.fill", stylers: [{ color: "#808080" }] }, // dark-300
+    { elementType: "labels.text.stroke", stylers: [{ color: "#0D0D0D" }] },
     { featureType: "administrative.land_parcel", stylers: [{ visibility: "off" }] },
     { featureType: "administrative.neighborhood", stylers: [{ visibility: "off" }] },
-    { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#00D26A" }] },
-    { featureType: "poi", elementType: "geometry", stylers: [{ color: "#222222" }] },
-    { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#555" }] },
-    { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#1e2e1e" }] },
-    { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#3a5a3a" }] },
-    { featureType: "road", elementType: "geometry", stylers: [{ color: "#2a2a2a" }] },
-    { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1a1a1a" }] },
-    { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#555" }] },
-    { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#333333" }] },
-    { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#3a3a3a" }] },
-    { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#2a2a2a" }] },
-    { featureType: "road.highway.controlled_access", elementType: "geometry", stylers: [{ color: "#444" }] },
-    { featureType: "road.local", elementType: "labels.text.fill", stylers: [{ color: "#444" }] },
-    { featureType: "transit", elementType: "geometry", stylers: [{ color: "#222" }] },
-    { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#555" }] },
-    { featureType: "water", elementType: "geometry", stylers: [{ color: "#0e1a2e" }] },
-    { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#3a3a5a" }] },
+    { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#00D26A" }] }, // primary
+    { featureType: "poi", elementType: "geometry", stylers: [{ color: "#141414" }] }, // dark-800
+    { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#4D4D4D" }] }, // dark-400
+    { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#0D1A12" }] }, // subtle green tint
+    { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#00B35A" }] },
+    { featureType: "road", elementType: "geometry", stylers: [{ color: "#1A1A1A" }] }, // dark-700
+    { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#0D0D0D" }] },
+    { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#808080" }] },
+    { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#262626" }] }, // dark-600
+    { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#333333" }] }, // dark-500
+    { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1A1A1A" }] },
+    { featureType: "road.highway.controlled_access", elementType: "geometry", stylers: [{ color: "#4D4D4D" }] }, // dark-400
+    { featureType: "road.local", elementType: "labels.text.fill", stylers: [{ color: "#808080" }] },
+    { featureType: "transit", elementType: "geometry", stylers: [{ color: "#141414" }] },
+    { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#4D4D4D" }] },
+    { featureType: "water", elementType: "geometry", stylers: [{ color: "#050505" }] }, // dark-950
+    { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#333333" }] },
 ];
 
 // Custom SVG marker for task pins

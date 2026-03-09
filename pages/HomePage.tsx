@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Map from '../components/Map';
 import TaskCard from '../components/TaskCard';
 import FloatingActionButton from '../components/FloatingActionButton';
@@ -19,6 +19,7 @@ const HomePage: React.FC = () => {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(true);
   const [globalLoading, setGlobalLoading] = useState(false);
+  const isVerifying = useRef(false);
 
   React.useEffect(() => {
     // When using HashRouter, external redirects usually put the query string before the hash.
@@ -36,6 +37,8 @@ const HomePage: React.FC = () => {
     }
 
     if (yocoSuccess === 'true' && pendingCheckoutId && pendingDetailsStr && token) {
+      if (isVerifying.current) return;
+      isVerifying.current = true;
       setGlobalLoading(true);
       const verifyTaskPayment = async () => {
         try {
@@ -75,8 +78,10 @@ const HomePage: React.FC = () => {
         } catch (error: any) {
           console.error('Yoco Return Error:', error);
           alert('Error verifying task payment: ' + error.message);
+          isVerifying.current = false;
         } finally {
           setGlobalLoading(false);
+          // Do not reset isVerifying.current to false on success to prevent double fire
         }
       };
       verifyTaskPayment();
